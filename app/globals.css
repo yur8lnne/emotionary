@@ -24,3 +24,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+.megrim-bold {
+  -webkit-text-stroke: 0.7px #000;
+  text-stroke: 0.7px #000;
+}
