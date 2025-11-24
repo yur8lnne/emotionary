@@ -1,23 +1,46 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Megrim } from "next/font/google";
 
-const megrim = Megrim({
-  weight: "400",
-  subsets: ["latin"],
-});
+const megrim = Megrim({ weight: "400", subsets: ["latin"] });
 
 export default function LoginPage() {
   const router = useRouter();
+  const [userId, setUserId] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleSignIn = () => {
-    router.push("/diary");
+  const handleSignIn = async () => {
+    if (!userId || !password) {
+      alert("ID와 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // 간단하게 localStorage에 저장
+        localStorage.setItem("user", JSON.stringify(data.user));
+        alert("로그인 성공!");
+        router.push("/diary"); // 로그인 후 달력 페이지로 이동
+      } else {
+        alert(data.message || "로그인 실패");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("로그인 중 오류 발생");
+    }
   };
 
-  const goToRegister = () => {
-    router.push("/register");
-  };
+  const goToRegister = () => router.push("/register");
 
   return (
     <div
@@ -37,6 +60,8 @@ export default function LoginPage() {
       <input
         type="text"
         placeholder="ID"
+        value={userId}
+        onChange={(e) => setUserId(e.target.value)}
         style={{
           width: "100%",
           padding: "12px",
@@ -49,6 +74,8 @@ export default function LoginPage() {
       <input
         type="password"
         placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
         style={{
           width: "100%",
           padding: "12px",
