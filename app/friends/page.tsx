@@ -10,7 +10,6 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-  DragMoveEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -124,18 +123,18 @@ export default function FriendsPage() {
     }
   };
 
-  // 드래그 끝났을 때 순서 적용
+  // 드래그 끝났을 때 순서 적용 (상하한 제한)
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
     const oldIndex = friends.indexOf(active.id as string);
-    const newIndex = friends.indexOf(over.id as string);
+    let newIndex = friends.indexOf(over.id as string);
 
     // 최상단/최하단 이상 이동 방지
-    const limitedIndex = Math.max(0, Math.min(friends.length - 1, newIndex));
+    newIndex = Math.max(0, Math.min(friends.length - 1, newIndex));
 
-    setFriends(arrayMove(friends, oldIndex, limitedIndex));
+    setFriends(arrayMove(friends, oldIndex, newIndex));
   };
 
   return (
@@ -148,6 +147,7 @@ export default function FriendsPage() {
         borderRadius: "12px",
       }}
     >
+      {/* 제목 + 설정 버튼 */}
       <div
         style={{
           display: "flex",
@@ -160,7 +160,10 @@ export default function FriendsPage() {
           FRIENDS
         </h2>
         <button
-          onClick={() => setSettingsMode(!settingsMode)}
+          onClick={() => {
+            if (settingsMode) setSelectedFriends([]); // 설정 모드에서 다시 클릭하면 선택 초기화
+            setSettingsMode(!settingsMode);
+          }}
           style={{
             background: "none",
             border: "none",
@@ -173,6 +176,7 @@ export default function FriendsPage() {
         </button>
       </div>
 
+      {/* 삭제 버튼 */}
       {selectedFriends.length > 0 && (
         <button
           onClick={deleteSelectedFriends}
@@ -191,6 +195,7 @@ export default function FriendsPage() {
         </button>
       )}
 
+      {/* 친구 추가 버튼 */}
       <button
         onClick={() => setShowInput(true)}
         style={{
@@ -208,6 +213,7 @@ export default function FriendsPage() {
         친구 추가하기
       </button>
 
+      {/* 친구 입력 UI */}
       {showInput && (
         <div
           style={{
@@ -230,9 +236,7 @@ export default function FriendsPage() {
               marginBottom: "12px",
             }}
           />
-          {error && (
-            <p style={{ color: "red", fontSize: "14px", marginBottom: "10px" }}>{error}</p>
-          )}
+          {error && <p style={{ color: "red", fontSize: "14px", marginBottom: "10px" }}>{error}</p>}
           <div style={{ display: "flex", gap: "10px" }}>
             <button
               onClick={addFriend}
