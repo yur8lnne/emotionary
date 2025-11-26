@@ -4,26 +4,26 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  userId    String   @unique
-  password  String
-  name      String?
-  email     String?  @unique
-  phone     String?  @unique
-  createdAt DateTime @default(now())
-
-  diaries Diary[] // <-- User와 연결된 Diary들
-}
-
-model Diary {
+model diary {
   id        Int      @id @default(autoincrement())
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
   content   String
   date      DateTime
   createdAt DateTime @default(now())
+  user      user     @relation(fields: [userId], references: [id], map: "Diary_userId_fkey")
+
+  @@index([userId], map: "Diary_userId_fkey")
+}
+
+model user {
+  id        Int      @id @default(autoincrement())
+  userId    String   @unique(map: "User_userId_key")
+  password  String
+  name      String?
+  email     String?  @unique(map: "User_email_key")
+  phone     String?  @unique(map: "User_phone_key")
+  createdAt DateTime @default(now())
+  diary     diary[]
 }
