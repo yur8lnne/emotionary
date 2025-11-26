@@ -16,6 +16,14 @@ export default function DiaryCalendarPage() {
     <div className="flex flex-col items-center w-full p-6">
       <h2 className="text-3xl mb-4 font-[Megrim] megrim-bold">CALENDER</h2>
 
+      {/* Friends Button */}
+      <button
+        onClick={() => router.push("/friends")}
+        className="mb-4 px-4 py-2 bg-green-500 text-white rounded-md shadow hover:bg-green-600"
+      >
+        친구 목록 보기
+      </button>
+
       {/* Tabs */}
       <div className="grid grid-cols-3 w-full max-w-md text-center rounded-lg overflow-hidden border border-gray-300">
         {tabs.map((t) => (
@@ -48,7 +56,7 @@ export default function DiaryCalendarPage() {
           ))}
         </div>
 
-        {/* Calendar days (static example like the screenshot) */}
+        {/* Calendar days */}
         <div className="grid grid-cols-7 text-center text-sm gap-y-3">
           {[26,27,28,29,30,31,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map((d, i) => {
             const isThisMonth = i >= 6 && i <= 35;
@@ -60,8 +68,7 @@ export default function DiaryCalendarPage() {
                 onClick={() => isThisMonth && router.push(`/diary/2025-11-${d}`)}
                 className={`w-8 h-8 flex items-center justify-center mx-auto rounded-full cursor-pointer transition-all
                   ${isThisMonth ? "text-white" : "text-gray-500"}
-                  ${isToday ? "bg-sky-400 text-black font-bold" : "hover:bg-gray-600"}
-                `}
+                  ${isToday ? "bg-sky-400 text-black font-bold" : "hover:bg-gray-600"}`}
               >
                 {d}
               </div>

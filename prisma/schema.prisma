@@ -26,4 +26,19 @@ model user {
   phone     String?  @unique(map: "User_phone_key")
   createdAt DateTime @default(now())
   diary     diary[]
+  // 친구 목록 relation 추가(Optional, 있어도 되고 없어도 됨)
+  friends   Friend[] @relation("UserFriends")
+  friendOf  Friend[] @relation("UserFriendOf")
 }
+
+model Friend {
+  id       String @id @default(cuid())
+  ownerId  Int
+  friendId Int
+
+  owner  user @relation("UserFriends", fields: [ownerId], references: [id])
+  friend user @relation("UserFriendOf", fields: [friendId], references: [id])
+
+  @@unique([ownerId, friendId])
+}
+
