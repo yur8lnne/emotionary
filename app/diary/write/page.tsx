@@ -109,6 +109,9 @@ export default function DiaryWrite() {
         body: JSON.stringify({
           content,
           date: selected.format("YYYY-MM-DD"),
+          userId: localStorage.getItem("user")
+            ? JSON.parse(localStorage.getItem("user") as string).id
+            : 0
         }),
       });
 

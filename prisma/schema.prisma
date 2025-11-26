@@ -12,12 +12,12 @@ model diary {
   content   String
   date      DateTime
   createdAt DateTime @default(now())
-  user      user     @relation(fields: [userId], references: [id], map: "Diary_userId_fkey")
+  user      User     @relation(fields: [userId], references: [id], map: "Diary_userId_fkey")
 
   @@index([userId], map: "Diary_userId_fkey")
 }
 
-model user {
+model User {
   id        Int      @id @default(autoincrement())
   userId    String   @unique(map: "User_userId_key")
   password  String
@@ -36,8 +36,8 @@ model Friend {
   ownerId  Int
   friendId Int
 
-  owner  user @relation("UserFriends", fields: [ownerId], references: [id])
-  friend user @relation("UserFriendOf", fields: [friendId], references: [id])
+  owner  User @relation("UserFriends", fields: [ownerId], references: [id])
+  friend User @relation("UserFriendOf", fields: [friendId], references: [id])
 
   @@unique([ownerId, friendId])
 }

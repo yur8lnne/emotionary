@@ -9,7 +9,7 @@ console.log("🔎 Prisma keys:", Object.keys(prisma));
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { content, date } = body;
+    const { content, date, userId } = body;
 
     if (!content || !date) {
       return NextResponse.json(
@@ -17,9 +17,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    // 로그인 없이 임의 ID 사용
-    const userId = 1;
 
     let diary;
     try {
