@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 export default function DiaryCalendarPage() {
   const router = useRouter();
   const [tab, setTab] = useState("friends");
+  const [yearModalOpen, setYearModalOpen] = useState(false);
 
   const tabs = [
     { key: "friends", label: "with friends" },
@@ -12,20 +13,52 @@ export default function DiaryCalendarPage() {
     { key: "private", label: "private" },
   ];
 
-  return (
-    <div className="flex flex-col items-center w-full p-6">
-      <h2 className="text-3xl mb-4 font-[Megrim] megrim-bold">CALENDER</h2>
+  const today = new Date();
+  const todayYear = today.getFullYear();
+  const todayMonth = today.getMonth();
+  const todayDate = today.getDate();
 
-      {/* Friends Button */}
-      <button
-        onClick={() => router.push("/friends")}
-        className="mb-4 px-4 py-2 bg-green-500 text-white rounded-md shadow hover:bg-green-600"
-      >
-        친구 목록 보기
-      </button>
+  const [year, setYear] = useState(todayYear);
+  const [month, setMonth] = useState(todayMonth);
+
+  const years = Array.from({ length: 20 }, (_, i) => todayYear - 10 + i);
+  const months = Array.from({ length: 12 }, (_, i) => i);
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const prevMonthDays = new Date(year, month, 0).getDate();
+
+  const calendarDays: { day: number; isCurrentMonth: boolean }[] = [];
+  for (let i = firstDay - 1; i >= 0; i--) {
+    calendarDays.push({ day: prevMonthDays - i, isCurrentMonth: false });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    calendarDays.push({ day: d, isCurrentMonth: true });
+  }
+  while (calendarDays.length < 42) {
+    calendarDays.push({ day: calendarDays.length - daysInMonth - firstDay + 1, isCurrentMonth: false });
+  }
+
+  const prevMonth = () => {
+    if (month === 0) {
+      setMonth(11);
+      setYear(year - 1);
+    } else setMonth(month - 1);
+  };
+
+  const nextMonth = () => {
+    if (month === 11) {
+      setMonth(0);
+      setYear(year + 1);
+    } else setMonth(month + 1);
+  };
+
+  return (
+    <div className="flex flex-col items-center w-full p-6 relative">
+      <h2 className="text-3xl mb-4 font-[Megrim] megrim-bold">CALENDAR</h2>
 
       {/* Tabs */}
-      <div className="grid grid-cols-3 w-full max-w-md text-center rounded-lg overflow-hidden border border-gray-300">
+      <div className="grid grid-cols-3 w-full max-w-md text-center rounded-lg overflow-hidden border border-gray-300 mb-6">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -41,11 +74,18 @@ export default function DiaryCalendarPage() {
 
       {/* Calendar container */}
       <div className="mt-6 bg-[#2b2b2b] text-white p-6 rounded-xl shadow-md w-full max-w-md">
+        {/* Year & Month */}
         <div className="flex justify-between items-center mb-4">
-          <span className="text-lg font-semibold">2025년 11월</span>
+          <div
+            onClick={() => setYearModalOpen(true)}
+            className="flex gap-2 cursor-pointer select-none"
+          >
+            <span className="text-lg font-semibold">{year}년</span>
+            <span className="text-lg font-semibold">{month + 1}월</span>
+          </div>
           <div className="flex gap-2">
-            <span className="cursor-pointer select-none">▲</span>
-            <span className="cursor-pointer select-none">▼</span>
+            <span onClick={prevMonth} className="cursor-pointer select-none text-lg font-bold">▲</span>
+            <span onClick={nextMonth} className="cursor-pointer select-none text-lg font-bold">▼</span>
           </div>
         </div>
 
@@ -58,31 +98,91 @@ export default function DiaryCalendarPage() {
 
         {/* Calendar days */}
         <div className="grid grid-cols-7 text-center text-sm gap-y-3">
-          {[26,27,28,29,30,31,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30].map((d, i) => {
-            const isThisMonth = i >= 6 && i <= 35;
-            const isToday = d === 15 && isThisMonth;
+          {calendarDays.map(({ day, isCurrentMonth }, idx) => {
+            const isToday =
+              isCurrentMonth && day === todayDate && month === todayMonth && year === todayYear;
 
             return (
               <div
-                key={i}
-                onClick={() => isThisMonth && router.push(`/diary/2025-11-${d}`)}
+                key={idx}
+                onClick={() =>
+                  isCurrentMonth &&
+                  router.push(
+                    `/diary/${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+                  )
+                }
                 className={`w-8 h-8 flex items-center justify-center mx-auto rounded-full cursor-pointer transition-all
-                  ${isThisMonth ? "text-white" : "text-gray-500"}
+                  ${isCurrentMonth ? "text-white" : "text-gray-500"}
                   ${isToday ? "bg-sky-400 text-black font-bold" : "hover:bg-gray-600"}`}
               >
-                {d}
+                {day}
               </div>
             );
           })}
         </div>
       </div>
 
-      <button
-        onClick={() => router.push("/diary/write")}
-        className="mt-6 px-4 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600"
-      >
-        새 일기 쓰기
-      </button>
+      {/* 버튼 두 개를 달력 아래에 배치, 색상 변경 */}
+      <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full max-w-md justify-center">
+        <button
+          onClick={() => router.push("/friends")}
+          className="flex-1 px-4 py-2 bg-[#94a3b8] text-white rounded-md shadow hover:bg-[#7e8ea0] transition-colors"
+        >
+          친구 목록 보기
+        </button>
+
+        <button
+          onClick={() => router.push("/diary/write")}
+          className="flex-1 px-4 py-2 bg-[#94a3b8] text-white rounded-md shadow hover:bg-[#7e8ea0] transition-colors"
+        >
+          새 일기 쓰기
+        </button>
+      </div>
+
+      {/* Year/Month Modal */}
+      {yearModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-xl p-6 w-64 flex flex-col items-center gap-4">
+            <h3 className="text-lg font-semibold">연도와 월 선택</h3>
+
+            <div className="flex gap-4 w-full justify-center overflow-x-auto">
+              <select
+                value={year}
+                onChange={(e) => setYear(Number(e.target.value))}
+                className="text-black p-2 rounded-md"
+              >
+                {years.map((y) => (
+                  <option key={y} value={y}>{y}년</option>
+                ))}
+              </select>
+              <select
+                value={month}
+                onChange={(e) => setMonth(Number(e.target.value))}
+                className="text-black p-2 rounded-md"
+              >
+                {months.map((m) => (
+                  <option key={m} value={m}>{m + 1}월</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-4 mt-4">
+              <button
+                onClick={() => setYearModalOpen(false)}
+                className="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => setYearModalOpen(false)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
