@@ -12,14 +12,13 @@ export default function DiaryWrite() {
 
   /** 날짜 선택 상태 */
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(dayjs()); // 오늘 날짜 기본 선택
+  const [selected, setSelected] = useState(dayjs()); 
   const [current, setCurrent] = useState(dayjs());
-  const [hoveredDay, setHoveredDay] = useState<number | null>(null); // hover 상태
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
 
   /** 에디터 placeholder 상태 */
   const [editorEmpty, setEditorEmpty] = useState(true);
 
-  /** 달력 데이터 */
   const daysInMonth = current.daysInMonth();
   const startDay = current.startOf("month").day();
 
@@ -36,14 +35,10 @@ export default function DiaryWrite() {
   for (let i = 0; i < startDay; i++) grid.push(null);
   for (let d = 1; d <= daysInMonth; d++) grid.push(d);
 
-  /** --------------------
-   *   색상 변경 / 사진 첨부
-   *  --------------------*/
+  /** 에디터 기능 */
   const saveSelection = () => {
     const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      savedRange = sel.getRangeAt(0);
-    }
+    if (sel && sel.rangeCount > 0) savedRange = sel.getRangeAt(0);
   };
 
   const restoreSelection = () => {
@@ -87,18 +82,56 @@ export default function DiaryWrite() {
     }
   };
 
-  // 처음 마운트 시 placeholder 설정
+  /** Placeholder 설정 */
   useEffect(() => {
     if (editorRef.current && editorEmpty) {
       editorRef.current.innerText = "오늘은 어떤 하루였나요?";
     }
   }, []);
 
+  /** 일기 저장 요청 */
+  const handleSubmit = async () => {
+    if (!selected) {
+      alert("날짜를 선택해주세요!");
+      return;
+    }
+
+    const content = editorRef.current?.innerHTML.trim();
+    if (!content || content === "" || content === "일기를 작성해보세요...") {
+      alert("내용을 입력해주세요!");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/diary/write", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          date: selected.format("YYYY-MM-DD"),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(`저장 실패: ${data.message}`);
+        return;
+      }
+
+      alert("일기 저장에 성공했습니다!");
+      router.push("/diary"); 
+    } catch (err) {
+      console.error(err);
+      alert("서버 오류: 저장에 실패했습니다.");
+    }
+  };
+
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h2></h2>
+      <h2>일기 작성</h2>
 
-      {/* 날짜 선택 input */}
+      {/* 날짜 선택 */}
       <div style={{ position: "relative", marginBottom: 12 }}>
         <input
           type="text"
@@ -119,7 +152,6 @@ export default function DiaryWrite() {
             style={{
               position: "absolute",
               top: 48,
-              left: 0,
               width: 260,
               background: "white",
               borderRadius: 12,
@@ -141,33 +173,33 @@ export default function DiaryWrite() {
             </div>
 
             <div className="grid grid-cols-7 text-center gap-y-2">
-              {grid.map((d, i) => (
-                <div key={i}>
-                  {d ? (
-                    <button
-                      onClick={() => handleSelect(d)}
-                      onMouseEnter={() => setHoveredDay(d)}
-                      onMouseLeave={() => setHoveredDay(null)}
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "50%",
-                        background:
-                          selected?.date() === d && selected.isSame(current, "month")
-                            ? "#5aa7ff"
-                            : hoveredDay === d
-                            ? "#b3d4ff"
-                            : "transparent",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {d}
-                    </button>
-                  ) : (
-                    <span></span>
-                  )}
-                </div>
-              ))}
+              {grid.map((d, i) =>
+                d ? (
+                  <button
+                    key={i}
+                    onClick={() => handleSelect(d)}
+                    onMouseEnter={() => setHoveredDay(d)}
+                    onMouseLeave={() => setHoveredDay(null)}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background:
+                        selected?.date() === d &&
+                        selected.isSame(current, "month")
+                          ? "#5aa7ff"
+                          : hoveredDay === d
+                          ? "#b3d4ff"
+                          : "transparent",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {d}
+                  </button>
+                ) : (
+                  <div key={i}></div>
+                )
+              )}
             </div>
 
             <div className="flex justify-between mt-3 text-sm">
@@ -216,7 +248,7 @@ export default function DiaryWrite() {
         }}
       />
 
-      {/* 글자색 / 사진 버튼 */}
+      {/* 글자색 / 사진 */}
       <div
         style={{
           display: "flex",
@@ -233,17 +265,9 @@ export default function DiaryWrite() {
           style={{
             width: 36,
             height: 36,
-            border: "none",
             borderRadius: "50%",
-            padding: 0,
             cursor: "pointer",
-            backgroundColor: "currentColor",
-            appearance: "none",
-            WebkitAppearance: "none",
-            MozAppearance: "none",
-            boxShadow: "none",
           }}
-          title="글자 색 변경"
         />
 
         <label
@@ -256,8 +280,6 @@ export default function DiaryWrite() {
             border: "1px solid #ccc",
             backgroundColor: "#fff",
             cursor: "pointer",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            transition: "all 0.2s",
           }}
           onMouseDown={(e) => {
             e.preventDefault();
@@ -275,6 +297,7 @@ export default function DiaryWrite() {
         </label>
       </div>
 
+      {/* 제출 버튼 */}
       <button
         style={{
           marginTop: 20,
@@ -287,7 +310,7 @@ export default function DiaryWrite() {
           fontSize: 16,
           cursor: "pointer",
         }}
-        onClick={() => alert("작성 완료!")}
+        onClick={handleSubmit} // 서버로 저장 요청
       >
         작성 완료
       </button>

@@ -1,0 +1,55 @@
+// app/api/diary/write/route.ts
+export const runtime = "nodejs";
+
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+console.log("🔎 Prisma keys:", Object.keys(prisma));
+
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { content, date } = body;
+
+    if (!content || !date) {
+      return NextResponse.json(
+        { message: "필수 값 누락" },
+        { status: 400 }
+      );
+    }
+
+    // 로그인 없이 임의 ID 사용
+    const userId = 1;
+
+    let diary;
+    try {
+      diary = await prisma.diary.create({
+        data: {
+          userId,
+          content,
+          date: new Date(date),
+        },
+      });
+    } catch (prismaError) {
+      console.error("🔥 Prisma 저장 에러 🔥", prismaError);
+      return NextResponse.json(
+        {
+          message: "일기 저장 실패: Prisma 에러 발생",
+          error: prismaError,
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: "일기 저장 성공!", diary },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    console.error("💥 일기 저장 전체 에러 💥", error);
+    return NextResponse.json(
+      { message: "일기 저장 실패", error: error.message },
+      { status: 500 }
+    );
+  }
+}

@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -14,5 +14,16 @@ model User {
   name      String?
   email     String?  @unique
   phone     String?  @unique
+  createdAt DateTime @default(now())
+
+  diaries Diary[] // <-- User와 연결된 Diary들
+}
+
+model Diary {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  content   String
+  date      DateTime
   createdAt DateTime @default(now())
 }
