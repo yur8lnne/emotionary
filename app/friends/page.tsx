@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Megrim } from "next/font/google";
 import { FaCog, FaGripLines } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   closestCenter,
@@ -31,8 +32,6 @@ interface FriendItemProps {
 
 function FriendItem({ id, name, selected, settingsMode, onSelect }: FriendItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
-
-  // 좌우 이동 제한
   const limitedTransform = transform ? { ...transform, x: 0 } : null;
 
   return (
@@ -42,11 +41,7 @@ function FriendItem({ id, name, selected, settingsMode, onSelect }: FriendItemPr
       style={{
         transform: CSS.Transform.toString(limitedTransform),
         transition,
-        background: selected
-          ? "#dbeafe"
-          : settingsMode
-          ? "#f0f9ff"
-          : "white",
+        background: selected ? "#dbeafe" : settingsMode ? "#f0f9ff" : "white",
         padding: "12px",
         borderRadius: "10px",
         border: "1px solid #ccc",
@@ -55,17 +50,11 @@ function FriendItem({ id, name, selected, settingsMode, onSelect }: FriendItemPr
         justifyContent: "space-between",
       }}
     >
-      <span
-        onClick={onSelect}
-        style={{ flex: 1, cursor: "pointer", userSelect: "none" }}
-      >
+      <span onClick={onSelect} style={{ flex: 1, cursor: "pointer", userSelect: "none" }}>
         {name}
       </span>
       {settingsMode && (
-        <span
-          {...listeners}
-          style={{ cursor: "grab", padding: "0 6px" }}
-        >
+        <span {...listeners} style={{ cursor: "grab", padding: "0 6px" }}>
           <FaGripLines />
         </span>
       )}
@@ -74,6 +63,7 @@ function FriendItem({ id, name, selected, settingsMode, onSelect }: FriendItemPr
 }
 
 export default function FriendsPage() {
+  const router = useRouter();
   const [friends, setFriends] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [showInput, setShowInput] = useState(false);
@@ -83,205 +73,120 @@ export default function FriendsPage() {
 
   const sensors = useSensors(useSensor(PointerSensor));
 
+  // 친구 목록 불러오기
+  const fetchFriends = async () => {
+    try {
+      const res = await fetch("/api/friends", { method: "GET", credentials: "include" });
+      if (res.status === 401) {
+        alert("로그인이 필요합니다.");
+        router.push("/login");
+        return;
+      }
+      const data = await res.json();
+      setFriends(data.friends || []);
+    } catch (err) {
+      console.error("친구 목록 불러오기 실패:", err);
+    }
+  };
+
   useEffect(() => {
-    fetch("/api/friends")
-      .then((res) => res.json())
-      .then((data) => setFriends(data.friends || []));
+    fetchFriends();
   }, []);
 
   const addFriend = async () => {
     if (!inputValue.trim()) return;
-    const res = await fetch("/api/friends", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ friendUserId: inputValue.trim() }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setError(data.error || "친구 추가 실패");
-      return;
-    }
-    setFriends(data.friends);
-    setError("");
-    setInputValue("");
-    setShowInput(false);
+    try {
+      const res = await fetch("/api/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ friendUserId: inputValue.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "친구 추가 실패"); return; }
+      setFriends(data.friends); setInputValue(""); setShowInput(false); setError("");
+    } catch (err) { console.error(err); setError("친구 추가 실패 (서버 오류)"); }
   };
 
   const deleteSelectedFriends = async () => {
-    for (const f of selectedFriends) {
-      await fetch(`/api/friends?id=${f}`, { method: "DELETE" });
-    }
-    setFriends(friends.filter((f) => !selectedFriends.includes(f)));
-    setSelectedFriends([]);
+    try {
+      for (const f of selectedFriends) {
+        await fetch(`/api/friends?id=${f}`, { method: "DELETE", credentials: "include" });
+      }
+      fetchFriends();
+      setSelectedFriends([]);
+    } catch (err) { console.error(err); alert("친구 삭제 실패"); }
   };
 
   const toggleSelectFriend = (id: string) => {
-    if (selectedFriends.includes(id)) {
-      setSelectedFriends(selectedFriends.filter((f) => f !== id));
-    } else {
-      setSelectedFriends([...selectedFriends, id]);
-    }
+    if (selectedFriends.includes(id)) setSelectedFriends(selectedFriends.filter(f => f !== id));
+    else setSelectedFriends([...selectedFriends, id]);
   };
 
-  // 드래그 끝났을 때 순서 적용 (상하한 제한)
-  const handleDragEnd = (event: DragEndEvent) => {
+  // 드래그 정렬 후 순서 저장
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-
     const oldIndex = friends.indexOf(active.id as string);
-    let newIndex = friends.indexOf(over.id as string);
+    const newIndex = friends.indexOf(over.id as string);
+    const newFriends = arrayMove(friends, oldIndex, newIndex);
+    setFriends(newFriends);
 
-    // 최상단/최하단 이상 이동 방지
-    newIndex = Math.max(0, Math.min(friends.length - 1, newIndex));
-
-    setFriends(arrayMove(friends, oldIndex, newIndex));
+    try {
+      await fetch("/api/friends", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ orderedFriends: newFriends }),
+      });
+    } catch (err) { console.error("순서 저장 실패:", err); }
   };
 
   return (
-    <div
-      style={{
-        maxWidth: "400px",
-        margin: "60px auto",
-        padding: "20px",
-        background: "#f5f5f5",
-        borderRadius: "12px",
-      }}
-    >
-      {/* 제목 + 설정 버튼 */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <h2 className={megrim.className} style={{ fontSize: "32px", fontWeight: 700 }}>
-          FRIENDS
-        </h2>
-        <button
-          onClick={() => {
-            if (settingsMode) setSelectedFriends([]); // 설정 모드에서 다시 클릭하면 선택 초기화
-            setSettingsMode(!settingsMode);
-          }}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "24px",
-            color: settingsMode ? "#94a3b8" : "#777",
-          }}
-        >
+    <div style={{ maxWidth: "400px", margin: "60px auto", padding: "20px", background: "#f5f5f5", borderRadius: "12px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h2 className={megrim.className} style={{ fontSize: "32px", fontWeight: 700 }}>FRIENDS</h2>
+        <button onClick={() => { if (settingsMode) setSelectedFriends([]); setSettingsMode(!settingsMode); }}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "24px", color: settingsMode ? "#94a3b8" : "#777" }}>
           <FaCog />
         </button>
       </div>
 
-      {/* 삭제 버튼 */}
       {selectedFriends.length > 0 && (
-        <button
-          onClick={deleteSelectedFriends}
-          style={{
-            width: "100%",
-            padding: "12px",
-            background: "#ef4444",
-            color: "white",
-            borderRadius: "10px",
-            border: "none",
-            cursor: "pointer",
-            marginBottom: "15px",
-          }}
-        >
+        <button onClick={deleteSelectedFriends}
+          style={{ width: "100%", padding: "12px", background: "#ef4444", color: "white", borderRadius: "10px", border: "none", cursor: "pointer", marginBottom: "15px" }}>
           선택 친구 삭제
         </button>
       )}
 
-      {/* 친구 추가 버튼 */}
-      <button
-        onClick={() => setShowInput(true)}
-        style={{
-          width: "100%",
-          padding: "14px",
-          background: "#94a3b8",
-          color: "white",
-          borderRadius: "10px",
-          border: "none",
-          cursor: "pointer",
-          fontSize: "16px",
-          marginBottom: "15px",
-        }}
-      >
+      <button onClick={() => setShowInput(true)}
+        style={{ width: "100%", padding: "14px", background: "#94a3b8", color: "white", borderRadius: "10px", border: "none", cursor: "pointer", fontSize: "16px", marginBottom: "15px" }}>
         친구 추가하기
       </button>
 
-      {/* 친구 입력 UI */}
       {showInput && (
-        <div
-          style={{
-            marginBottom: "20px",
-            padding: "15px",
-            borderRadius: "10px",
-            background: "white",
-            border: "1px solid #ccc",
-          }}
-        >
+        <div style={{ marginBottom: "20px", padding: "15px", borderRadius: "10px", background: "white", border: "1px solid #ccc" }}>
           <input
             placeholder="친구 아이디 입력 (user.userId)"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "12px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-              marginBottom: "12px",
-            }}
+            onChange={e => setInputValue(e.target.value)}
+            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ccc", marginBottom: "12px" }}
           />
           {error && <p style={{ color: "red", fontSize: "14px", marginBottom: "10px" }}>{error}</p>}
           <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              onClick={addFriend}
-              style={{
-                flex: 1,
-                padding: "12px",
-                background: "#94a3b8",
-                color: "white",
-                borderRadius: "10px",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              추가
-            </button>
-            <button
-              onClick={() => setShowInput(false)}
-              style={{
-                flex: 1,
-                padding: "12px",
-                background: "#e5e7eb",
-                borderRadius: "10px",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              취소
-            </button>
+            <button onClick={addFriend} style={{ flex: 1, padding: "12px", background: "#94a3b8", color: "white", borderRadius: "10px", border: "none", cursor: "pointer" }}>추가</button>
+            <button onClick={() => setShowInput(false)} style={{ flex: 1, padding: "12px", background: "#e5e7eb", borderRadius: "10px", border: "none", cursor: "pointer" }}>취소</button>
           </div>
         </div>
       )}
 
       <h3 style={{ fontSize: "20px", marginBottom: "10px" }}>친구 목록</h3>
+
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={friends} strategy={verticalListSortingStrategy}>
           <ul style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {friends.map((f) => (
-              <FriendItem
-                key={f}
-                id={f}
-                name={f}
-                selected={selectedFriends.includes(f)}
-                settingsMode={settingsMode}
-                onSelect={() => toggleSelectFriend(f)}
-              />
+            {friends.map(f => (
+              <FriendItem key={f} id={f} name={f} selected={selectedFriends.includes(f)} settingsMode={settingsMode} onSelect={() => toggleSelectFriend(f)} />
             ))}
           </ul>
         </SortableContext>

@@ -1,11 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function DiaryCalendarPage() {
   const router = useRouter();
   const [tab, setTab] = useState("friends");
   const [yearModalOpen, setYearModalOpen] = useState(false);
+
+  const [noDiaryModal, setNoDiaryModal] = useState(false); // ⭐ 추가: 일기 없음 모달
+  const [user, setUser] = useState<any>(null); // ⭐ 추가: 로그인 정보 불러오기
+
+  // 로그인 유저 localStorage에서 불러오기
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) setUser(JSON.parse(stored));
+  }, []);
 
   const tabs = [
     { key: "friends", label: "with friends" },
@@ -36,7 +45,10 @@ export default function DiaryCalendarPage() {
     calendarDays.push({ day: d, isCurrentMonth: true });
   }
   while (calendarDays.length < 42) {
-    calendarDays.push({ day: calendarDays.length - daysInMonth - firstDay + 1, isCurrentMonth: false });
+    calendarDays.push({
+      day: calendarDays.length - daysInMonth - firstDay + 1,
+      isCurrentMonth: false,
+    });
   }
 
   const prevMonth = () => {
@@ -53,6 +65,36 @@ export default function DiaryCalendarPage() {
     } else setMonth(month + 1);
   };
 
+  // ⭐ 날짜 클릭 시 실행되는 함수
+  const handleDayClick = async (day: number, isCurrentMonth: boolean) => {
+    if (!isCurrentMonth) return;
+    if (!user) return;
+
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+      day
+    ).padStart(2, "0")}`;
+
+    try {
+      const res = await fetch(
+        `/api/diary?date=${dateStr}&userId=${user.id}`,
+        { method: "GET" }
+      );
+
+      const data = await res.json();
+
+      // ⭐ 일기가 있을 때 → 해당 페이지로 이동
+      if (data?.diary) {
+        router.push(`/diary/${dateStr}`);
+      } else {
+        // ⭐ 없을 때 → 모달 열기
+        setNoDiaryModal(true);
+      }
+    } catch (err) {
+      console.error(err);
+      setNoDiaryModal(true);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center w-full p-6 relative">
       <h2 className="text-3xl mb-4 font-[Megrim] megrim-bold">CALENDAR</h2>
@@ -64,7 +106,9 @@ export default function DiaryCalendarPage() {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`py-3 text-l font-[Megrim] megrim-bold transition-all ${
-              tab === t.key ? "bg-gray-200" : "bg-gray-100 hover:bg-gray-200"
+              tab === t.key
+                ? "bg-gray-200"
+                : "bg-gray-100 hover:bg-gray-200"
             }`}
           >
             {t.label}
@@ -84,8 +128,18 @@ export default function DiaryCalendarPage() {
             <span className="text-lg font-semibold">{month + 1}월</span>
           </div>
           <div className="flex gap-2">
-            <span onClick={prevMonth} className="cursor-pointer select-none text-lg font-bold">▲</span>
-            <span onClick={nextMonth} className="cursor-pointer select-none text-lg font-bold">▼</span>
+            <span
+              onClick={prevMonth}
+              className="cursor-pointer select-none text-lg font-bold"
+            >
+              ▲
+            </span>
+            <span
+              onClick={nextMonth}
+              className="cursor-pointer select-none text-lg font-bold"
+            >
+              ▼
+            </span>
           </div>
         </div>
 
@@ -100,20 +154,19 @@ export default function DiaryCalendarPage() {
         <div className="grid grid-cols-7 text-center text-sm gap-y-3">
           {calendarDays.map(({ day, isCurrentMonth }, idx) => {
             const isToday =
-              isCurrentMonth && day === todayDate && month === todayMonth && year === todayYear;
+              isCurrentMonth &&
+              day === todayDate &&
+              month === todayMonth &&
+              year === todayYear;
 
             return (
               <div
                 key={idx}
-                onClick={() =>
-                  isCurrentMonth &&
-                  router.push(
-                    `/diary/${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-                  )
-                }
+                onClick={() => handleDayClick(day, isCurrentMonth)} // ⭐ 날짜 클릭 로직 연결
                 className={`w-8 h-8 flex items-center justify-center mx-auto rounded-full cursor-pointer transition-all
                   ${isCurrentMonth ? "text-white" : "text-gray-500"}
-                  ${isToday ? "bg-sky-400 text-black font-bold" : "hover:bg-gray-600"}`}
+                  ${isToday ? "bg-sky-400 text-black font-bold" : "hover:bg-gray-600"}
+                `}
               >
                 {day}
               </div>
@@ -122,7 +175,7 @@ export default function DiaryCalendarPage() {
         </div>
       </div>
 
-      {/* 버튼 두 개를 달력 아래에 배치, 색상 변경 */}
+      {/* Buttons */}
       <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full max-w-md justify-center">
         <button
           onClick={() => router.push("/friends")}
@@ -152,16 +205,21 @@ export default function DiaryCalendarPage() {
                 className="text-black p-2 rounded-md"
               >
                 {years.map((y) => (
-                  <option key={y} value={y}>{y}년</option>
+                  <option key={y} value={y}>
+                    {y}년
+                  </option>
                 ))}
               </select>
+
               <select
                 value={month}
                 onChange={(e) => setMonth(Number(e.target.value))}
                 className="text-black p-2 rounded-md"
               >
                 {months.map((m) => (
-                  <option key={m} value={m}>{m + 1}월</option>
+                  <option key={m} value={m}>
+                    {m + 1}월
+                  </option>
                 ))}
               </select>
             </div>
@@ -173,6 +231,7 @@ export default function DiaryCalendarPage() {
               >
                 취소
               </button>
+
               <button
                 onClick={() => setYearModalOpen(false)}
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
@@ -180,6 +239,22 @@ export default function DiaryCalendarPage() {
                 확인
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐ 일기 없는 날 모달 */}
+      {noDiaryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white rounded-xl p-6 w-64 text-center">
+            <p className="text-lg font-semibold text-black">일기가 아직 없습니다!</p>
+
+            <button
+              onClick={() => setNoDiaryModal(false)}
+              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              확인
+            </button>
           </div>
         </div>
       )}

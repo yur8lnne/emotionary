@@ -1,40 +1,61 @@
-// lib/auth.ts
-import NextAuth from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { PrismaClient } from "@prisma/client";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
-import { compare } from "bcrypt";
+import { NextAuthOptions } from "next-auth";
 
-export const authOptions = {
-  adapter: PrismaAdapter(prisma),
+const prisma = new PrismaClient();
+
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "text" },
+        userId: { label: "User ID", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) return null;
+        if (!credentials?.userId || !credentials.password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { userId: credentials.userId },
         });
 
         if (!user) return null;
+        if (user.password !== credentials.password) return null;
 
-        const isValid = await compare(credentials.password, user.password);
-
-        if (!isValid) return null;
-
-        return user;
+        return {
+          id: String(user.id),
+          userId: user.userId,
+          name: user.userId,
+        };
       },
     }),
   ],
-  session: { strategy: "jwt" },
+
+  session: {
+    strategy: "jwt",
+  },
+
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.userId = user.userId;
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (token) {
+        session.user = {
+          id: token.id,
+          userId: token.userId,
+        };
+      }
+      return session;
+    },
+  },
+
   pages: {
-    signIn: "/login", // 로그인 페이지 경로
+    signIn: "/login",
   },
 };
-
-export default authOptions;
