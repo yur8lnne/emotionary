@@ -6,39 +6,56 @@ datasource db {
   provider = "mysql"
 }
 
-model diary {
+model Diary {
   id        Int      @id @default(autoincrement())
   userId    Int
   content   String
   date      DateTime
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], map: "Diary_userId_fkey")
 
-  @@index([userId], map: "Diary_userId_fkey")
-}
+  user      User     @relation(fields: [userId], references: [id])
 
-model User {
-  id        Int      @id @default(autoincrement())
-  userId    String   @unique(map: "User_userId_key")
-  password  String
-  name      String?
-  email     String?  @unique(map: "User_email_key")
-  phone     String?  @unique(map: "User_phone_key")
-  createdAt DateTime @default(now())
-  diary     diary[]
-  // 친구 목록 relation 추가(Optional, 있어도 되고 없어도 됨)
-  friends   Friend[] @relation("UserFriends")
-  friendOf  Friend[] @relation("UserFriendOf")
+  emotions  Emotion[]  // Diary에 연결된 감정들
+
+  @@index([userId])
 }
 
 model Friend {
-  id       String @id @default(cuid())
-  ownerId  Int
-  friendId Int
+  id                         String @id
+  ownerId                    Int
+  friendId                   Int
+  order                      Int
 
-  owner  User @relation("UserFriends", fields: [ownerId], references: [id])
-  friend User @relation("UserFriendOf", fields: [friendId], references: [id])
+  user_friend_friendIdTouser User   @relation("friend_friendIdTouser", fields: [friendId], references: [id])
+  user_friend_ownerIdTouser  User   @relation("friend_ownerIdTouser", fields: [ownerId], references: [id])
 
   @@unique([ownerId, friendId])
+  @@index([friendId])
 }
 
+model User {
+  id                           Int       @id @default(autoincrement())
+  userId                       String    @unique
+  password                     String
+  name                         String?
+  email                        String?   @unique
+  phone                        String?   @unique
+  createdAt                    DateTime  @default(now())
+
+  diary                        Diary[]
+  friend_friend_friendIdTouser Friend[] @relation("friend_friendIdTouser")
+  friend_friend_ownerIdTouser  Friend[] @relation("friend_ownerIdTouser")
+  emotions                      Emotion[] // user가 선택한 이모티콘
+}
+
+model Emotion {
+  id       Int      @id @default(autoincrement())
+  icon     String
+  date     DateTime
+
+  userId   Int
+  user     User     @relation(fields: [userId], references: [id])
+
+  diaryId  Int?     // optional: Diary와 연결
+  diary    Diary?   @relation(fields: [diaryId], references: [id])
+}

@@ -14,12 +14,16 @@ export default function DiaryWrite() {
 
   /** 날짜 선택 상태 */
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(dayjs()); 
+  const [selected, setSelected] = useState(dayjs());
   const [current, setCurrent] = useState(dayjs());
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
 
   /** 에디터 placeholder 상태 */
   const [editorEmpty, setEditorEmpty] = useState(true);
+
+  /** 오늘의 이모티콘 상태 */
+  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
   const daysInMonth = current.daysInMonth();
   const startDay = current.startOf("month").day();
@@ -37,7 +41,7 @@ export default function DiaryWrite() {
   for (let i = 0; i < startDay; i++) grid.push(null);
   for (let d = 1; d <= daysInMonth; d++) grid.push(d);
 
-  /** 에디터 기능 */
+  /** 커서 저장 & 복구 */
   const saveSelection = () => {
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) savedRange = sel.getRangeAt(0);
@@ -50,11 +54,13 @@ export default function DiaryWrite() {
     sel?.addRange(savedRange);
   };
 
+  /** 글자색 */
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     restoreSelection();
     document.execCommand("foreColor", false, e.target.value);
   };
 
+  /** 이미지 첨부 */
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0] && editorRef.current) {
       const file = e.target.files[0];
@@ -84,17 +90,31 @@ export default function DiaryWrite() {
     }
   };
 
-  /** Placeholder 설정 */
+  /** 이모티콘 목록 */
+  const emojiList = ["🙂", "😂", "😭", "🤔", "😡", "😍", "😴", "👀", "🎉", "❤️", "⭐", "🌸"];
+
+  /** 이모티콘 선택 */
+  const selectEmoji = (emoji: string) => {
+    setSelectedEmoji(emoji);
+    setEmojiOpen(false);
+  };
+
+  /** placeholder 초기 설정 */
   useEffect(() => {
     if (editorRef.current && editorEmpty) {
       editorRef.current.innerText = "오늘은 어떤 하루였나요?";
     }
   }, []);
 
-  /** 일기 저장 요청 */
+  /** 일기 저장 */
   const handleSubmit = async () => {
     if (!selected) {
       alert("날짜를 선택해주세요!");
+      return;
+    }
+
+    if (!selectedEmoji) {
+      alert("오늘의 이모티콘을 선택해주세요!");
       return;
     }
 
@@ -111,10 +131,8 @@ export default function DiaryWrite() {
         body: JSON.stringify({
           content,
           date: selected.format("YYYY-MM-DD"),
-          // userId: localStorage.getItem("user")
-          //   ? JSON.parse(localStorage.getItem("user") as string).id
-          //   : 0
-          userId: session?.user?.id || 0
+          emoji: selectedEmoji,
+          userId: session?.user?.id || 0,
         }),
       });
 
@@ -126,7 +144,7 @@ export default function DiaryWrite() {
       }
 
       alert("일기 저장에 성공했습니다!");
-      router.push("/diary"); 
+      router.push("/diary");
     } catch (err) {
       console.error(err);
       alert("서버 오류: 저장에 실패했습니다.");
@@ -136,6 +154,11 @@ export default function DiaryWrite() {
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
       <h2>일기 작성</h2>
+
+      {/* 오늘의 이모티콘 표시 */}
+      <div style={{ fontSize: 40, textAlign: "center", marginBottom: 16 }}>
+        {selectedEmoji || "❓"}
+      </div>
 
       {/* 날짜 선택 */}
       <div style={{ position: "relative", marginBottom: 12 }}>
@@ -252,6 +275,8 @@ export default function DiaryWrite() {
           outline: "none",
           color: editorEmpty ? "#999" : "#000",
         }}
+        onMouseUp={saveSelection}
+        onKeyUp={saveSelection}
       />
 
       {/* 글자색 / 사진 */}
@@ -301,6 +326,54 @@ export default function DiaryWrite() {
             style={{ display: "none" }}
           />
         </label>
+
+        {/* 이모티콘 버튼 */}
+        <button
+          style={{
+            padding: "8px 12px",
+            borderRadius: 8,
+            border: "1px solid #ccc",
+            background: "#fff",
+            cursor: "pointer",
+          }}
+          onClick={() => setEmojiOpen((prev) => !prev)}
+        >
+          😊 이모티콘 선택
+        </button>
+
+        {emojiOpen && (
+          <div
+            style={{
+              position: "absolute",
+              marginTop: 60,
+              background: "white",
+              borderRadius: 8,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+              padding: 12,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              width: 220,
+              zIndex: 100,
+            }}
+          >
+            {emojiList.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => selectEmoji(emoji)}
+                style={{
+                  fontSize: 20,
+                  padding: 6,
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 제출 버튼 */}
@@ -316,7 +389,7 @@ export default function DiaryWrite() {
           fontSize: 16,
           cursor: "pointer",
         }}
-        onClick={handleSubmit} // 서버로 저장 요청
+        onClick={handleSubmit}
       >
         작성 완료
       </button>
