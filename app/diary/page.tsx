@@ -103,7 +103,7 @@ export default function DiaryPage() {
 
           {/* 우측: 로그아웃 버튼 */}
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ redirect: false, callbackUrl: "/" })}
             className="px-3 py-1 bg-[#94a3b8] text-white rounded hover:bg-[#7e8ea0] transition"
           >
             로그아웃
