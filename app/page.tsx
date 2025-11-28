@@ -1,4 +1,7 @@
+"use client";
+
 import { Megrim } from "next/font/google";
+import { useSession } from "next-auth/react";
 
 const megrim = Megrim({
   weight: "400",
@@ -6,6 +9,8 @@ const megrim = Megrim({
 });
 
 export default function Home() {
+  const { data: session } = useSession();
+
   return (
     <div style={{ textAlign: "center", marginTop: "140px" }}>
       <h1
@@ -15,6 +20,20 @@ export default function Home() {
         emotionary
       </h1>
 
+    {
+      (session && session.user) ? (      
+      <a
+        href="/diary"
+        style={{
+          padding: "12px 20px",
+          background: "#ddd",
+          borderRadius: "8px",
+          display: "inline-block",
+        }}
+      >
+        달력으로 가기
+      </a>
+      ) : (
       <a
         href="/login"
         style={{
@@ -26,6 +45,8 @@ export default function Home() {
       >
         로그인
       </a>
+      )
+    }
     </div>
   );
 }
