@@ -13,21 +13,21 @@ model Diary {
   date      DateTime
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], map: "Diary_userId_fkey")
 
   emotions  Emotion[]  // Diary에 연결된 감정들
 
-  @@index([userId])
+  @@index([userId], map: "Diary_userId_fkey")
 }
 
 model Friend {
-  id                         String @id
+  id                         String @id @default(cuid())
   ownerId                    Int
   friendId                   Int
   order                      Int
 
-  user_friend_friendIdTouser User   @relation("friend_friendIdTouser", fields: [friendId], references: [id])
-  user_friend_ownerIdTouser  User   @relation("friend_ownerIdTouser", fields: [ownerId], references: [id])
+  owner  User @relation("UserFriends", fields: [ownerId], references: [id])
+  friend User @relation("UserFriendOf", fields: [friendId], references: [id])
 
   @@unique([ownerId, friendId])
   @@index([friendId])
@@ -35,16 +35,16 @@ model Friend {
 
 model User {
   id                           Int       @id @default(autoincrement())
-  userId                       String    @unique
+  userId                       String    @unique(map: "User_userId_key")
   password                     String
   name                         String?
-  email                        String?   @unique
-  phone                        String?   @unique
+  email                        String?   @unique(map: "User_email_key")
+  phone                        String?   @unique(map: "User_phone_key")
   createdAt                    DateTime  @default(now())
 
   diary                        Diary[]
-  friend_friend_friendIdTouser Friend[] @relation("friend_friendIdTouser")
-  friend_friend_ownerIdTouser  Friend[] @relation("friend_ownerIdTouser")
+  friends   Friend[] @relation("UserFriends")
+  friendOf  Friend[] @relation("UserFriendOf")
   emotions                      Emotion[] // user가 선택한 이모티콘
 }
 
