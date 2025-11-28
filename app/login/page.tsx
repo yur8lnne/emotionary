@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Megrim } from "next/font/google";
+import { signIn } from "next-auth/react";
 
 const megrim = Megrim({ weight: "400", subsets: ["latin"] });
 
@@ -18,6 +19,7 @@ export default function LoginPage() {
     }
 
     try {
+      /*
       const res = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -33,6 +35,19 @@ export default function LoginPage() {
         router.push("/diary"); // 로그인 후 달력 페이지로 이동
       } else {
         alert(data.message || "로그인 실패");
+      }
+      */
+      const result = await signIn("credentials", {
+        redirect: false,
+        userId,
+        password,
+      });
+
+      if (result?.error) {
+        alert("로그인 실패: " + result.error);
+      } else {
+        alert("로그인 성공!");
+        router.push("/diary"); // 로그인 후 달력 페이지로 이동
       }
     } catch (err) {
       console.error(err);

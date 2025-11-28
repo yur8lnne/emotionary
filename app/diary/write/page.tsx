@@ -4,9 +4,11 @@ import { useRef, useState, useEffect } from "react";
 import { FaCamera } from "react-icons/fa";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function DiaryWrite() {
   const router = useRouter();
+  const { data: session } = useSession();
   const editorRef = useRef<HTMLDivElement>(null);
   let savedRange: Range | null = null;
 
@@ -109,9 +111,10 @@ export default function DiaryWrite() {
         body: JSON.stringify({
           content,
           date: selected.format("YYYY-MM-DD"),
-          userId: localStorage.getItem("user")
-            ? JSON.parse(localStorage.getItem("user") as string).id
-            : 0
+          // userId: localStorage.getItem("user")
+          //   ? JSON.parse(localStorage.getItem("user") as string).id
+          //   : 0
+          userId: session?.user?.id || 0
         }),
       });
 

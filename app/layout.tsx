@@ -4,6 +4,7 @@ import "./globals.css";
 import Link from "next/link";
 import { Megrim } from "next/font/google";
 import { usePathname } from "next/navigation";
+import Provider from "@/lib/provider";
 
 // Megrim font
 const megrim = Megrim({
@@ -38,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </header>
         )}
 
-        <main style={{ padding: "16px" }}>{children}</main>
+        <main style={{ padding: "16px" }}><Provider>{children}</Provider></main>
       </body>
     </html>
   );
