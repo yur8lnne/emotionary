@@ -2,9 +2,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export default function DiaryPage() {
+export default function DiaryPeekPage() {
   const router = useRouter();
-  const [tab, setTab] = useState("private");
+  const [tab, setTab] = useState("peek");
   const [yearModalOpen, setYearModalOpen] = useState(false);
 
   const [noDiaryModal, setNoDiaryModal] = useState(false);
@@ -15,7 +15,6 @@ export default function DiaryPage() {
     if (stored) setUser(JSON.parse(stored));
   }, []);
 
-  // 탭 순서 고정: 왼쪽 peek, 오른쪽 private
   const tabs = [
     { key: "peek", label: "peek only" },
     { key: "private", label: "private" },
@@ -73,13 +72,13 @@ export default function DiaryPage() {
 
     try {
       const res = await fetch(
-        `/api/diary?date=${dateStr}&userId=${user.id}`,
+        `/api/diary/peek?date=${dateStr}&userId=${user.id}`,
         { method: "GET" }
       );
       const data = await res.json();
 
       if (data?.diary) {
-        router.push(`/diary/${dateStr}`);
+        router.push(`/diary/peek/${dateStr}`);
       } else {
         setNoDiaryModal(true);
       }
@@ -137,12 +136,14 @@ export default function DiaryPage() {
           </div>
         </div>
 
+        {/* Weekdays */}
         <div className="grid grid-cols-7 text-center text-sm mb-3 text-gray-300">
           {"일월화수목금토".split("").map((d) => (
             <div key={d}>{d}</div>
           ))}
         </div>
 
+        {/* Calendar days */}
         <div className="grid grid-cols-7 text-center text-sm gap-y-3">
           {calendarDays.map(({ day, isCurrentMonth }, idx) => {
             const isToday =
@@ -177,10 +178,10 @@ export default function DiaryPage() {
         </button>
 
         <button
-          onClick={() => router.push("/diary/write")}
+          onClick={() => router.push("/diary/peek/friends")}
           className="flex-1 px-4 py-2 bg-[#94a3b8] text-white rounded-md shadow hover:bg-[#7e8ea0] transition-colors"
         >
-          새 일기 쓰기
+          친구 일기 보기
         </button>
       </div>
 
