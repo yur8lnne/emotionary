@@ -3,10 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-/**
- * GET /api/diary?date=YYYY-MM-DD
- * 로그인된 사용자의 특정 날짜의 일기 조회
- */
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -27,15 +23,14 @@ export async function GET(req: Request) {
         userId: session.user.id,
         date,
       },
+      include: {
+        Emotion: true,
+      },
     });
-
-    if (!diary) {
-      return NextResponse.json({ diary: null }, { status: 200 });
-    }
 
     return NextResponse.json({ diary }, { status: 200 });
   } catch (err) {
-    console.error("GET /api/diary error:", err);
+    console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

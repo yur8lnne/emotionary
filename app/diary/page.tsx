@@ -1,19 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 export default function DiaryPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [tab, setTab] = useState("private");
   const [yearModalOpen, setYearModalOpen] = useState(false);
-
   const [noDiaryModal, setNoDiaryModal] = useState(false);
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) setUser(JSON.parse(stored));
-  }, []);
 
   // 탭 순서 고정: 왼쪽 peek, 오른쪽 private
   const tabs = [
@@ -65,7 +60,7 @@ export default function DiaryPage() {
   };
 
   const handleDayClick = async (day: number, isCurrentMonth: boolean) => {
-    if (!isCurrentMonth || !user) return;
+    if (!isCurrentMonth || !session?.user) return;
 
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
       day
@@ -73,7 +68,7 @@ export default function DiaryPage() {
 
     try {
       const res = await fetch(
-        `/api/diary?date=${dateStr}&userId=${user.id}`,
+        `/api/diary?date=${dateStr}&userId=${session.user.id}`,
         { method: "GET" }
       );
       const data = await res.json();
@@ -92,6 +87,29 @@ export default function DiaryPage() {
   return (
     <div className="flex flex-col items-center w-full p-6 relative">
       <h2 className="text-3xl mb-4 font-[Megrim] megrim-bold">CALENDAR</h2>
+
+      {/* 로그인 상태 표시 + 로그아웃 */}
+      {session?.user && (
+        <div className="flex justify-between items-center mb-4 w-full max-w-md">
+          {/* 좌측: 프로필 이미지 + 아이디 */}
+          <div className="flex items-center gap-3">
+            <img
+              src="https://i.imgur.com/2yaf2wb.png" // Smiley face
+              alt="profile"
+              className="w-8 h-8 rounded-full"
+            />
+            <span className="text-lg font-medium">{session.user.userId}님</span>
+          </div>
+
+          {/* 우측: 로그아웃 버튼 */}
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="px-3 py-1 bg-[#94a3b8] text-white rounded hover:bg-[#7e8ea0] transition"
+          >
+            로그아웃
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="grid grid-cols-2 w-full max-w-md text-center rounded-lg overflow-hidden border border-gray-300 mb-6">

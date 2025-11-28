@@ -1,20 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 export default function DiaryPeekPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [tab, setTab] = useState("peek");
   const [yearModalOpen, setYearModalOpen] = useState(false);
-
   const [noDiaryModal, setNoDiaryModal] = useState(false);
-  const [user, setUser] = useState<any>(null);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) setUser(JSON.parse(stored));
-  }, []);
-
+  // 탭 순서 고정: 왼쪽 peek, 오른쪽 private
   const tabs = [
     { key: "peek", label: "peek only" },
     { key: "private", label: "private" },
@@ -64,7 +60,7 @@ export default function DiaryPeekPage() {
   };
 
   const handleDayClick = async (day: number, isCurrentMonth: boolean) => {
-    if (!isCurrentMonth || !user) return;
+    if (!isCurrentMonth || !session?.user) return;
 
     const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
       day
@@ -72,13 +68,13 @@ export default function DiaryPeekPage() {
 
     try {
       const res = await fetch(
-        `/api/diary/peek?date=${dateStr}&userId=${user.id}`,
+        `/api/diary?date=${dateStr}&userId=${session.user.id}`,
         { method: "GET" }
       );
       const data = await res.json();
 
       if (data?.diary) {
-        router.push(`/diary/peek/${dateStr}`);
+        router.push(`/diary/${dateStr}`);
       } else {
         setNoDiaryModal(true);
       }
@@ -91,6 +87,29 @@ export default function DiaryPeekPage() {
   return (
     <div className="flex flex-col items-center w-full p-6 relative">
       <h2 className="text-3xl mb-4 font-[Megrim] megrim-bold">CALENDAR</h2>
+
+      {/* 로그인 상태 표시 + 로그아웃 */}
+      {session?.user && (
+        <div className="flex justify-between items-center mb-4 w-full max-w-md">
+          {/* 좌측: 프로필 이미지 + 아이디 */}
+          <div className="flex items-center gap-3">
+            <img
+              src="https://i.imgur.com/2yaf2wb.png" // Smiley face
+              alt="profile"
+              className="w-8 h-8 rounded-full"
+            />
+            <span className="text-lg font-medium">{session.user.userId}님</span>
+          </div>
+
+          {/* 우측: 로그아웃 버튼 */}
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="px-3 py-1 bg-[#94a3b8] text-white rounded hover:bg-[#7e8ea0] transition"
+          >
+            로그아웃
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="grid grid-cols-2 w-full max-w-md text-center rounded-lg overflow-hidden border border-gray-300 mb-6">
@@ -136,14 +155,12 @@ export default function DiaryPeekPage() {
           </div>
         </div>
 
-        {/* Weekdays */}
         <div className="grid grid-cols-7 text-center text-sm mb-3 text-gray-300">
           {"일월화수목금토".split("").map((d) => (
             <div key={d}>{d}</div>
           ))}
         </div>
 
-        {/* Calendar days */}
         <div className="grid grid-cols-7 text-center text-sm gap-y-3">
           {calendarDays.map(({ day, isCurrentMonth }, idx) => {
             const isToday =
@@ -178,10 +195,10 @@ export default function DiaryPeekPage() {
         </button>
 
         <button
-          onClick={() => router.push("/diary/peek/friends")}
+          onClick={() => router.push("/diary/write")}
           className="flex-1 px-4 py-2 bg-[#94a3b8] text-white rounded-md shadow hover:bg-[#7e8ea0] transition-colors"
         >
-          친구 일기 보기
+          새 일기 쓰기
         </button>
       </div>
 
