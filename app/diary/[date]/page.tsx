@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 
 export default function DiaryDetailPage() {
   const router = useRouter();
-  const { date } = useParams(); // "2025-11-28"
+  const { date } = useParams(); // 예: "2025-11-28"
   const [diary, setDiary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,29 +51,40 @@ export default function DiaryDetailPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-8">
-          {/* ✅ 선택된 감정만 보여주기 */}
+
+          {/* ---------------------------------------------------------------- */}
+          {/* ✅ 선택된 감정(이모지) 1개만 보여주기 */}
+          {/* ---------------------------------------------------------------- */}
           <div>
             <h2 className="text-xl font-semibold mb-3">오늘의 감정</h2>
 
-            <div className="flex flex-wrap gap-3 text-3xl">
-              {diary.emotions && diary.emotions.length > 0 ? (
-                diary.emotions.map((emo: any) => (
-                  <span
-                    key={emo.id}
-                    className="px-3 py-1 rounded-full bg-yellow-300 border border-yellow-500 scale-110"
-                  >
-                    {emo.icon}
-                  </span>
-                ))
-              ) : (
-                <span className="text-gray-500 text-lg">
-                  선택한 감정이 없습니다
-                </span>
-              )}
-            </div>
+            {diary.emoji ? (
+              <div className="text-4xl px-4 py-2 rounded-full bg-yellow-200 w-fit border border-yellow-400">
+                {diary.emoji}
+              </div>
+            ) : (
+              <span className="text-gray-500">선택한 감정이 없습니다</span>
+            )}
           </div>
 
-          {/* 일기 내용 */}
+          {/* ---------------------------------------------------------------- */}
+          {/* ✅ 선택한 친구 보여주기 */}
+          {/* ---------------------------------------------------------------- */}
+          <div>
+            <h2 className="text-xl font-semibold mb-3">함께한 친구</h2>
+
+            {diary.friendUserId ? (
+              <div className="px-4 py-2 rounded-lg bg-blue-100 border border-blue-300 text-lg">
+                {diary.friendUserId}
+              </div>
+            ) : (
+              <span className="text-gray-500">선택한 친구가 없습니다</span>
+            )}
+          </div>
+
+          {/* ---------------------------------------------------------------- */}
+          {/* ✅ 일기 내용 */}
+          {/* ---------------------------------------------------------------- */}
           <div>
             <h2 className="text-xl font-semibold mb-3">일기 내용</h2>
 
@@ -82,7 +93,9 @@ export default function DiaryDetailPage() {
             </div>
           </div>
 
-          {/* 뒤로가기 */}
+          {/* ---------------------------------------------------------------- */}
+          {/* 🔙 뒤로가기 버튼 */}
+          {/* ---------------------------------------------------------------- */}
           <button
             onClick={() => router.push("/diary")}
             className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 w-fit"
