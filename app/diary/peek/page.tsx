@@ -13,12 +13,19 @@ export default function DiaryPeekPage() {
   const selectedFriendId = searchParams.get("friendId");
   const selectedFriendName = searchParams.get("friendName");
 
+  // 드롭다운 열림 여부
+  const [friendDropdownOpen, setFriendDropdownOpen] = useState(false);
+
+  // 친구 목록
+  const [friends, setFriends] = useState<any[]>([]);
+  const [loadingFriends, setLoadingFriends] = useState(true);
+
   // 탭
   const [tab, setTab] = useState("peek");
   const [yearModalOpen, setYearModalOpen] = useState(false);
   const [noDiaryModal, setNoDiaryModal] = useState(false);
 
-  // 날짜 계산
+  // 현재 날짜 계산
   const today = new Date();
   const todayYear = today.getFullYear();
   const todayMonth = today.getMonth();
@@ -49,7 +56,24 @@ export default function DiaryPeekPage() {
     });
   }
 
-  // 이전/다음 달
+  // 🔥 친구 목록 가져오기
+  useEffect(() => {
+    async function fetchFriends() {
+      try {
+        const res = await fetch("/api/friends");
+        const data = await res.json();
+        setFriends(data.friends || []);
+        setLoadingFriends(false);
+      } catch (err) {
+        console.error(err);
+        setLoadingFriends(false);
+      }
+    }
+
+    fetchFriends();
+  }, []);
+
+  // 이전/다음달 이동
   const prevMonth = () => {
     if (month === 0) {
       setMonth(11);
@@ -63,7 +87,7 @@ export default function DiaryPeekPage() {
     } else setMonth(month + 1);
   };
 
-  // 날짜 클릭 → 선택된 친구의 일기 확인
+  // 날짜 클릭 → 친구 일기 확인
   const handleDayClick = async (day: number, isCurrentMonth: boolean) => {
     if (!isCurrentMonth || !selectedFriendId) return;
 
@@ -96,11 +120,11 @@ export default function DiaryPeekPage() {
       {session?.user && (
         <div className="flex justify-between items-center mb-4 w-full max-w-md">
           <div className="flex items-center gap-3">
-            {/* 😀 Smiley face 적용 */}
-            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xl">
-              🙂
-            </div>
-
+            <img
+              src="https://i.imgur.com/2yaf2wb.png"
+              alt="profile"
+              className="w-8 h-8 rounded-full"
+            />
             <span className="text-lg font-medium">{session.user.userId}님</span>
           </div>
 
@@ -113,7 +137,7 @@ export default function DiaryPeekPage() {
         </div>
       )}
 
-      {/* tabs */}
+      {/* 탭 */}
       <div className="grid grid-cols-2 w-full max-w-md text-center rounded-lg overflow-hidden border border-gray-300 mb-6">
         {[
           { key: "peek", label: "peek only" },
@@ -134,14 +158,49 @@ export default function DiaryPeekPage() {
         ))}
       </div>
 
-      {/* 친구 이름 표시 */}
-      <div className="mb-3 text-lg font-medium text-gray-800 bg-gray-200 px-4 py-2 rounded-lg">
-        {selectedFriendId
-          ? `${selectedFriendName}님의 달력`
-          : "친구를 선택해주세요"}
+      {/* 🔥 친구 선택 드롭다운 */}
+      <div className="w-full max-w-md mb-4 relative">
+        <button
+          onClick={() => setFriendDropdownOpen(!friendDropdownOpen)}
+          className="w-full px-4 py-2 bg-gray-200 rounded-lg text-lg font-medium hover:bg-gray-300 transition"
+        >
+          {selectedFriendName
+            ? `${selectedFriendName}님의 달력`
+            : "친구 선택하기"}
+        </button>
+
+        {/* 드롭다운 목록 */}
+        {friendDropdownOpen && (
+          <div className="absolute mt-2 w-full bg-white border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+            {loadingFriends ? (
+              <div className="p-3 text-gray-600 text-center">불러오는 중…</div>
+            ) : friends.length === 0 ? (
+              <div className="p-3 text-gray-600 text-center">
+                아직 친구가 없습니다
+              </div>
+            ) : (
+              friends.map((f) => (
+                <div
+                  key={f.id}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => {
+                    setFriendDropdownOpen(false);
+                    router.push(
+                      `/diary/peek?friendId=${f.friendId}&friendName=${encodeURIComponent(
+                        f.friendName
+                      )}`
+                    );
+                  }}
+                >
+                  {f.friendName} ({f.friendId})
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 달력 */}
+      {/* 달력 UI */}
       <div className="mt-3 bg-[#2b2b2b] text-white p-6 rounded-xl shadow-md w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <div
@@ -151,6 +210,7 @@ export default function DiaryPeekPage() {
             <span className="text-lg font-semibold">{year}년</span>
             <span className="text-lg font-semibold">{month + 1}월</span>
           </div>
+
           <div className="flex gap-2">
             <span
               onClick={prevMonth}
@@ -197,7 +257,7 @@ export default function DiaryPeekPage() {
         </div>
       </div>
 
-      {/* 버튼들 */}
+      {/* 친구 목록 페이지로 이동 */}
       <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full max-w-md justify-center">
         <button
           onClick={() => router.push("/friends")}
@@ -205,16 +265,9 @@ export default function DiaryPeekPage() {
         >
           친구 목록 보기
         </button>
-
-        <button
-          onClick={() => router.push("/diary/peek/friends")}
-          className="flex-1 px-4 py-2 bg-[#94a3b8] text-white rounded-md shadow hover:bg-[#7e8ea0] transition-colors"
-        >
-          친구 선택
-        </button>
       </div>
 
-      {/* 모달 */}
+      {/* 연도/월 선택 모달 */}
       {yearModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white rounded-xl p-6 w-64 flex flex-col items-center gap-4">
@@ -264,6 +317,7 @@ export default function DiaryPeekPage() {
         </div>
       )}
 
+      {/* 일기 없음 모달 */}
       {noDiaryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-xl p-6 w-64 text-center">
