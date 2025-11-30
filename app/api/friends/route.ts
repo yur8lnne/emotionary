@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 // GET: 친구 목록 (정렬 순서 포함)
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -19,7 +19,20 @@ export async function GET() {
       orderBy: { order: "asc" },
     });
 
-    return NextResponse.json({ friends: list.map(f => f.friend.userId) });
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get("type");
+
+    if (type === "detailed") {
+      return NextResponse.json({
+        friends: list.map(f => ({
+          id: f.friend.id,
+          friendId: f.friend.userId,
+          friendName: f.friend.name,
+        })),
+      });
+    } else {
+      return NextResponse.json({ friends: list.map(f => f.friend.userId) });
+    }
   } catch (e) {
     console.error("GET error:", e);
     return NextResponse.json({ friends: [] });

@@ -69,7 +69,7 @@ export default function DiaryPeekPage() {
   useEffect(() => {
     async function fetchFriends() {
       try {
-        const res = await fetch("/api/friends");
+        const res = await fetch("/api/friends?type=detailed");
         const data = await res.json();
         setFriends(data.friends || []);
         setLoadingFriends(false);
@@ -106,7 +106,8 @@ export default function DiaryPeekPage() {
 
     try {
       const res = await fetch(
-        `/api/diary?date=${dateStr}&userId=${selectedFriendId}`
+        `/api/diary?date=${dateStr}&userId=${selectedFriendId}`,
+        { method: "GET" }
       );
       const data = await res.json();
 
@@ -195,7 +196,7 @@ export default function DiaryPeekPage() {
                   onClick={() => {
                     setFriendDropdownOpen(false);
                     router.push(
-                      `/diary/peek?friendId=${f.friendId}&friendName=${encodeURIComponent(
+                      `/diary/peek?friendId=${f.id}&friendName=${encodeURIComponent(
                         f.friendName
                       )}`
                     );
