@@ -58,13 +58,22 @@ export default function DiaryDetailPage() {
           <div>
             <h2 className="text-xl font-semibold mb-3">오늘의 감정</h2>
 
-            {diary.emoji ? (
-              <div className="text-4xl px-4 py-2 rounded-full bg-yellow-200 w-fit border border-yellow-400">
-                {diary.emoji}
-              </div>
-            ) : (
-              <span className="text-gray-500">선택한 감정이 없습니다</span>
-            )}
+            <div className="flex flex-wrap gap-3 text-3xl">
+              {diary.emotions && diary.emotions.length > 0 ? (
+                diary.emotions.map((emo: any) => (
+                  <span
+                    key={emo.id}
+                    className="px-3 py-1 rounded-full bg-yellow-300 border border-yellow-500 scale-110"
+                  >
+                    {emo.icon}
+                  </span>
+                ))
+              ) : (
+                <span className="text-gray-500 text-lg">
+                  선택한 감정이 없습니다
+                </span>
+              )}
+            </div>
           </div>
 
           {/* ---------------------------------------------------------------- */}

@@ -1,17 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 
 export default function DiaryPeekPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { data: session } = useSession();
 
   // 선택된 친구
-  const selectedFriendId = searchParams.get("friendId");
-  const selectedFriendName = searchParams.get("friendName");
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [selectedFriendName, setSelectedFriendName] = useState<string | null>(null);
 
   // 드롭다운 열림 여부
   const [friendDropdownOpen, setFriendDropdownOpen] = useState(false);
@@ -55,6 +54,16 @@ export default function DiaryPeekPage() {
       isCurrentMonth: false,
     });
   }
+
+  // URL 파라미터에서 친구 정보 가져오기
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const friendId = params.get("friendId");
+    const friendName = params.get("friendName");
+
+    if (friendId) setSelectedFriendId(friendId);
+    if (friendName) setSelectedFriendName(decodeURIComponent(friendName));
+  }, []);
 
   // 🔥 친구 목록 가져오기
   useEffect(() => {
