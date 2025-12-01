@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Span } from "next/dist/trace";
 
 export default function DiaryDetailPage() {
   const router = useRouter();
@@ -42,7 +41,10 @@ export default function DiaryDetailPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          diaryId: diary.id,
+          userId: diary.userId,
+        }),
       });
       const data = await res.json();
       alert("좋아요를 눌렀습니다!");

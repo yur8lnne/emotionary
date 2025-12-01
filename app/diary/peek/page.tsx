@@ -109,13 +109,13 @@ export default function DiaryPeekPage() {
 
     try {
       const res = await fetch(
-        `/api/diary?date=${dateStr}&userId=${selectedFriendId}`,
+        `/api/diary?date=${dateStr}&friendUserId=${selectedFriendId}`,
         { method: "GET" }
       );
       const data = await res.json();
 
       if (data?.diary) {
-        router.push(`/diary/${dateStr}?userId=${selectedFriendId}`);
+        router.push(`/diary/peek/${dateStr}?userId=${selectedFriendId}`);
       } else {
         setNoDiaryModal(true);
       }

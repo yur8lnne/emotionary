@@ -3,8 +3,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { LiaKaabaSolid, LiaKeySolid } from "react-icons/lia";
-import { lightningCssTransform } from "next/dist/build/swc/generated-native";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -38,6 +36,7 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const date = searchParams.get("date");
+    const friendUserId = searchParams.get("friendUserId");
 
     if (!date) {
       return NextResponse.json({ error: "date is required" }, { status: 400 });
@@ -48,7 +47,7 @@ export async function GET(req: Request) {
 
     const diary = await prisma.diary.findFirst({
       where: {
-        userId: session.user.id,   // 로그인한 사용자 아이디
+        userId: friendUserId ? Number(friendUserId) : session.user.id,   // 로그인한 사용자 아이디
         date: {
           gte: start,
           lt: end,
