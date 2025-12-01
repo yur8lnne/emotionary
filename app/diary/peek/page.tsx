@@ -208,7 +208,7 @@ export default function DiaryPeekPage() {
                     );
                   }}
                 >
-                  {f.friendName} ({f.friendId})
+                  {f.friendId} { f.friendName ? "(" + f.friendName + ")" : ""}
                 </div>
               ))
             )}

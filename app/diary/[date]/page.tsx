@@ -47,7 +47,7 @@ export default function DiaryDetailPage() {
         }),
       });
       const data = await res.json();
-      alert("좋아요를 눌렀습니다!");
+      window.location.reload();
     } catch (e) {
       console.error(e);
     }

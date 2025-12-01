@@ -191,6 +191,18 @@ export default function FriendsPage() {
           </ul>
         </SortableContext>
       </DndContext>
+
+      {/* ---------------------------------------------------------------- */}
+      {/* 🔙 뒤로가기 버튼 */}
+      {/* ---------------------------------------------------------------- */}
+      <br></br><br></br>
+      <button
+        onClick={() => history.back()}
+        className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 w-fit"
+      >
+        ← 달력으로 돌아가기
+      </button>
+
     </div>
   );
 }
