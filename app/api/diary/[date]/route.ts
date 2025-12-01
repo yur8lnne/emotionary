@@ -21,6 +21,7 @@ export async function GET(
     },
     include: {
       emotions: true, // 연결된 이모지만 가져오기
+      likes: true,
     },
   });
 

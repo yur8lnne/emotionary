@@ -10,6 +10,7 @@ export default function DiaryPeekPage() {
 
   // 선택된 친구
   const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [selectedFriendUserId, setSelectedFriendUserId] = useState<string | null>(null);
   const [selectedFriendName, setSelectedFriendName] = useState<string | null>(null);
 
   // 드롭다운 열림 여부
@@ -59,9 +60,11 @@ export default function DiaryPeekPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const friendId = params.get("friendId");
+    const friendUserId = params.get("friendUserId");
     const friendName = params.get("friendName");
 
     if (friendId) setSelectedFriendId(friendId);
+    if (friendUserId) setSelectedFriendUserId(friendUserId);
     if (friendName) setSelectedFriendName(decodeURIComponent(friendName));
   }, []);
 
@@ -174,8 +177,8 @@ export default function DiaryPeekPage() {
           onClick={() => setFriendDropdownOpen(!friendDropdownOpen)}
           className="w-full px-4 py-2 bg-gray-200 rounded-lg text-lg font-medium hover:bg-gray-300 transition"
         >
-          {selectedFriendName
-            ? `${selectedFriendName}님의 달력`
+          {selectedFriendUserId
+            ? `${selectedFriendUserId}님의 달력`
             : "친구 선택하기"}
         </button>
 
@@ -195,8 +198,11 @@ export default function DiaryPeekPage() {
                   className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                   onClick={() => {
                     setFriendDropdownOpen(false);
+                    setSelectedFriendUserId(f.friendId);
+                    setSelectedFriendName(f.friendName);
+                    setSelectedFriendId(f.id);
                     router.push(
-                      `/diary/peek?friendId=${f.id}&friendName=${encodeURIComponent(
+                      `/diary/peek?friendId=${f.id}&friendUserId=${f.friendId}&friendName=${encodeURIComponent(
                         f.friendName
                       )}`
                     );

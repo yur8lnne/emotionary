@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { Span } from "next/dist/trace";
 
 export default function DiaryDetailPage() {
   const router = useRouter();
@@ -33,6 +34,22 @@ export default function DiaryDetailPage() {
       </div>
     );
   }
+
+  const handleLikeClick = async () => {
+    try {
+      const res = await fetch(`/api/diary/like`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      alert("좋아요를 눌렀습니다!");
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
@@ -100,6 +117,15 @@ export default function DiaryDetailPage() {
             <div className="border border-gray-300 rounded-lg p-4 whitespace-pre-wrap bg-white leading-relaxed">
               {diary.content}
             </div>
+          </div>
+
+          {/* ---------------------------------------------------------------- */}
+          {/* ✅ 좋아요 */}
+          {/* ---------------------------------------------------------------- */}
+          <div>
+            <h2 className="text-xl font-semibold mb-3">좋아요</h2>
+
+            <span><a href="#" onClick={() => handleLikeClick()}>❤️</a> {diary.likes.length}명이 좋아합니다.</span>
           </div>
 
           {/* ---------------------------------------------------------------- */}

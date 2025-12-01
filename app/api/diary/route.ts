@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { LiaKaabaSolid, LiaKeySolid } from "react-icons/lia";
+import { lightningCssTransform } from "next/dist/build/swc/generated-native";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -54,6 +56,7 @@ export async function GET(req: Request) {
       },
       include: {
         emotions: true,
+        likes: true,
       },
     });
 

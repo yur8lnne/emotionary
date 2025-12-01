@@ -16,6 +16,7 @@ model Diary {
   user      User     @relation(fields: [userId], references: [id], map: "Diary_userId_fkey")
 
   emotions  Emotion[]  // Diary에 연결된 감정들
+  likes     Like[]
 
   @@index([userId], map: "Diary_userId_fkey")
 }
@@ -45,7 +46,8 @@ model User {
   diary                        Diary[]
   friends   Friend[] @relation("UserFriends")
   friendOf  Friend[] @relation("UserFriendOf")
-  emotions                      Emotion[] // user가 선택한 이모티콘
+  emotions                     Emotion[] // user가 선택한 이모티콘
+  likes                        Like[]
 }
 
 model Emotion {
@@ -58,4 +60,15 @@ model Emotion {
 
   diaryId  Int?     // optional: Diary와 연결
   diary    Diary?   @relation(fields: [diaryId], references: [id])
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  diaryId   Int
+  user      User     @relation(fields: [userId], references: [id])
+  diary     Diary    @relation(fields: [diaryId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, diaryId])
 }
