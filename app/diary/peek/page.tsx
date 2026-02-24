@@ -144,7 +144,7 @@ export default function DiaryPeekPage() {
       const data = await res.json();
 
       if (data?.diary) {
-        router.push(`/diary/peek/${dateStr}?userId=${selectedFriendId}`);
+        router.push(`/diary/peek/${dateStr}?userId=${selectedFriendId}&friendUserId=${selectedFriendId}`);
       } else {
         setNoDiaryModal(true);
       }

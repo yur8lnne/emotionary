@@ -11,15 +11,22 @@ export default function DiaryDetailPage() {
   const [diary, setDiary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const getFriendQuery = () => {
+    const params = new URLSearchParams(window.location.search);
+    const friendId = params.get("friendId") ?? params.get("userId");
+    const friendUserId = params.get("friendUserId");
+    const friendName = params.get("friendName");
+    return { friendId, friendUserId, friendName };
+  };
+
   useEffect(() => {
     if (!date) return;
 
     async function fetchDiary() {
       try {
-        const params = new URLSearchParams(window.location.search);
-        const selectedFriendId = params.get("userId");
+        const { friendId } = getFriendQuery();
 
-        const res = await fetch(`/api/diary?date=${date}&friendUserId=${selectedFriendId}`, { method: "GET" });
+        const res = await fetch(`/api/diary?date=${date}&friendUserId=${friendId}`, { method: "GET" });
         const data = await res.json();
         setDiary(data.diary);
         setLoading(false);
@@ -52,6 +59,22 @@ export default function DiaryDetailPage() {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleBackToCalendar = () => {
+    const { friendId, friendUserId, friendName } = getFriendQuery();
+
+    if (!friendId) {
+      router.push("/diary/peek");
+      return;
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("friendId", friendId);
+    if (friendUserId) qs.set("friendUserId", friendUserId);
+    if (friendName) qs.set("friendName", friendName);
+
+    router.push(`/diary/peek?${qs.toString()}`);
   };
 
   return (
@@ -114,7 +137,7 @@ export default function DiaryDetailPage() {
           </div>
 
           <button
-            onClick={() => history.back()}
+            onClick={handleBackToCalendar}
             style={{
               padding: "10px 15px",
               borderRadius: "6px",
