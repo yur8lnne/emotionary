@@ -9,6 +9,7 @@ export default function DiaryPage() {
   const [tab, setTab] = useState("private");
   const [yearModalOpen, setYearModalOpen] = useState(false);
   const [noDiaryModal, setNoDiaryModal] = useState(false);
+  const [diaryDates, setDiaryDates] = useState<Set<string>>(new Set());
 
   // 탭 순서 고정: 왼쪽 peek, 오른쪽 private
   const tabs = [
@@ -58,6 +59,31 @@ export default function DiaryPage() {
       setYear(year + 1);
     } else setMonth(month + 1);
   };
+
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const fetchDiaryDates = async () => {
+      try {
+        const res = await fetch(
+          `/api/diary?year=${year}&month=${month + 1}`,
+          { method: "GET" }
+        );
+        const data = await res.json();
+
+        if (res.ok && Array.isArray(data?.diaryDates)) {
+          setDiaryDates(new Set(data.diaryDates));
+        } else {
+          setDiaryDates(new Set());
+        }
+      } catch (err) {
+        console.error(err);
+        setDiaryDates(new Set());
+      }
+    };
+
+    fetchDiaryDates();
+  }, [session?.user, year, month]);
 
   const handleDayClick = async (day: number, isCurrentMonth: boolean) => {
     if (!isCurrentMonth || !session?.user) return;
@@ -169,15 +195,23 @@ export default function DiaryPage() {
               month === todayMonth &&
               year === todayYear;
 
+            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+              day
+            ).padStart(2, "0")}`;
+            const hasDiary = isCurrentMonth && diaryDates.has(dateStr);
+
             return (
               <div
                 key={idx}
                 onClick={() => handleDayClick(day, isCurrentMonth)}
-                className={`w-8 h-8 flex items-center justify-center mx-auto rounded-full cursor-pointer transition-all
+                className={`w-8 h-8 flex items-center justify-center mx-auto rounded-full cursor-pointer transition-all relative
                   ${isCurrentMonth ? "text-white" : "text-gray-500"}
                   ${isToday ? "bg-sky-400 text-black font-bold" : "hover:bg-gray-600"}
                 `}
               >
+                {hasDiary && (
+                  <span className="absolute -right-1 -top-1 w-2 h-2 bg-red-500 rounded-full" />
+                )}
                 {day}
               </div>
             );

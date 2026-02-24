@@ -82,10 +82,45 @@ router.get("/", requireAuth, async (req, res) => {
     const loginUserId = Number((req as any).user.id);
 
     const date = req.query.date as string | undefined;
+    const yearParam = req.query.year as string | undefined;
+    const monthParam = req.query.month as string | undefined;
     const friendUserId = req.query.friendUserId as string | undefined;
 
-    if (!date) {
-      return res.status(400).json({ error: "date is required" });
+    if (!date && (!yearParam || !monthParam)) {
+      return res
+        .status(400)
+        .json({ error: "date or year/month is required" });
+    }
+
+    const ownerId = friendUserId ? Number(friendUserId) : loginUserId;
+
+    if (yearParam && monthParam && !date) {
+      const year = Number(yearParam);
+      const month = Number(monthParam);
+
+      if (Number.isNaN(year) || Number.isNaN(month) || month < 1 || month > 12) {
+        return res.status(400).json({ error: "invalid year/month" });
+      }
+
+      const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+      const end = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+
+      const diaries = await prisma.diary.findMany({
+        where: {
+          userId: ownerId,
+          date: {
+            gte: start,
+            lt: end,
+          },
+        },
+        select: {
+          date: true,
+        },
+      });
+
+      const diaryDates = diaries.map((d) => d.date.toISOString().slice(0, 10));
+
+      return res.status(200).json({ diaryDates });
     }
 
     const start = new Date(`${date}T00:00:00.000Z`);
@@ -94,8 +129,6 @@ router.get("/", requireAuth, async (req, res) => {
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return res.status(400).json({ error: "invalid date format" });
     }
-
-    const ownerId = friendUserId ? Number(friendUserId) : loginUserId;
 
     const diary = await prisma.diary.findFirst({
       where: {
