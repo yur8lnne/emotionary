@@ -24,6 +24,7 @@ export default function DiaryPeekPage() {
   const [tab, setTab] = useState("peek");
   const [yearModalOpen, setYearModalOpen] = useState(false);
   const [noDiaryModal, setNoDiaryModal] = useState(false);
+  const [diaryDates, setDiaryDates] = useState<Set<string>>(new Set());
 
   // 현재 날짜 계산
   const today = new Date();
@@ -98,6 +99,34 @@ export default function DiaryPeekPage() {
       setYear(year + 1);
     } else setMonth(month + 1);
   };
+
+  useEffect(() => {
+    if (!session?.user || !selectedFriendId) {
+      setDiaryDates(new Set());
+      return;
+    }
+
+    const fetchDiaryDates = async () => {
+      try {
+        const res = await fetch(
+          `/api/diary?year=${year}&month=${month + 1}&friendUserId=${selectedFriendId}`,
+          { method: "GET" }
+        );
+        const data = await res.json();
+
+        if (res.ok && Array.isArray(data?.diaryDates)) {
+          setDiaryDates(new Set(data.diaryDates));
+        } else {
+          setDiaryDates(new Set());
+        }
+      } catch (err) {
+        console.error(err);
+        setDiaryDates(new Set());
+      }
+    };
+
+    fetchDiaryDates();
+  }, [session?.user, selectedFriendId, year, month]);
 
   // 날짜 클릭 → 친구 일기 확인
   const handleDayClick = async (day: number, isCurrentMonth: boolean) => {
@@ -257,15 +286,23 @@ export default function DiaryPeekPage() {
               month === todayMonth &&
               year === todayYear;
 
+            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+              day
+            ).padStart(2, "0")}`;
+            const hasDiary = isCurrentMonth && diaryDates.has(dateStr);
+
             return (
               <div
                 key={idx}
                 onClick={() => handleDayClick(day, isCurrentMonth)}
-                className={`w-8 h-8 flex items-center justify-center mx-auto rounded-full cursor-pointer transition-all
+                className={`w-8 h-8 flex items-center justify-center mx-auto rounded-full cursor-pointer transition-all relative
                   ${isCurrentMonth ? "text-white" : "text-gray-500"}
                   ${isToday ? "bg-sky-400 text-black font-bold" : "hover:bg-gray-600"}
                 `}
               >
+                {hasDiary && (
+                  <span className="absolute -right-1 -top-1 w-2 h-2 bg-red-500 rounded-full" />
+                )}
                 {day}
               </div>
             );
