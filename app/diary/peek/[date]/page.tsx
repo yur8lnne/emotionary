@@ -114,7 +114,7 @@ export default function DiaryDetailPage() {
           </div>
 
           <button
-            onClick={() => router.push("/diary/peek")}
+            onClick={() => history.back()}
             style={{
               padding: "10px 15px",
               borderRadius: "6px",
