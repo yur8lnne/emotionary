@@ -13,16 +13,33 @@ export async function POST(req: Request) {
             );
         }
 
-        // 좋아요 생성
+        const existingLike = await prisma.like.findFirst({
+            where: {
+                diaryId: Number(diaryId),
+                userId: Number(userId),
+            },
+        });
+
+        if (existingLike) {
+            await prisma.like.delete({
+                where: { id: existingLike.id },
+            });
+
+            return NextResponse.json(
+                { message: "좋아요 삭제 성공!", liked: false },
+                { status: 200 }
+            );
+        }
+
         await prisma.like.create({
             data: {
-                diary: { connect: { id: diaryId } },
-                user: { connect: { id: userId } },
+                diary: { connect: { id: Number(diaryId) } },
+                user: { connect: { id: Number(userId) } },
             },
         });
 
         return NextResponse.json(
-            { message: "좋아요 저장 성공!" },
+            { message: "좋아요 저장 성공!", liked: true },
             { status: 201 }
         );
     } catch (error: any) {
