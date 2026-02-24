@@ -43,6 +43,8 @@ export default function DiaryDetailPage() {
   }
 
   const handleLikeClick = async () => {
+    if (!session?.user?.id) return;
+    
     try {
       const res = await fetch(`/api/diary/like`, {
         method: "POST",

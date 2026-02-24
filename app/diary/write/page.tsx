@@ -14,7 +14,7 @@ export default function DiaryWrite() {
 
   /** 날짜 선택 상태 */
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(dayjs());
+  const [selected, setSelected] = useState<dayjs.Dayjs | null>(dayjs());
   const [current, setCurrent] = useState(dayjs());
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
 
@@ -82,7 +82,7 @@ export default function DiaryWrite() {
           range.setEndAfter(img);
           sel.removeAllRanges();
           sel.addRange(range);
-        } else {
+        } else if (editorRef.current) {
           editorRef.current.appendChild(img);
         }
       };

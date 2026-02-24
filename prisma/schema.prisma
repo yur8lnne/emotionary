@@ -18,6 +18,7 @@ model Diary {
   emotions  Emotion[]  // Diary에 연결된 감정들
   likes     Like[]
 
+  @@unique([userId, date], map: "Diary_userId_date_key")
   @@index([userId], map: "Diary_userId_fkey")
 }
 

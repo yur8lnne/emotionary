@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   req: Request,
-  { params }: { params: { date: string } }
+  { params }: { params: Promise<{ date: string }> }
 ) {
-  const date = params.date; // "2025-11-28"
+  const { date } = await params; // "2025-11-28"
 
   // 날짜 범위 설정 (00:00 ~ 23:59)
   const start = new Date(`${date}T00:00:00`);

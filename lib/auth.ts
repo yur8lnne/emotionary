@@ -29,7 +29,7 @@ export const authOptions: NextAuthOptions = {
         if (user.password !== credentials.password) return null;
 
         return {
-          id: String(user.id),
+          id: user.id,
           userId: user.userId,
           name: user.userId,
         };
@@ -44,7 +44,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.id = typeof user.id === 'number' ? user.id : Number(user.id);
         token.userId = user.userId;
       }
       return token;
@@ -55,7 +55,7 @@ export const authOptions: NextAuthOptions = {
         session.user = {
           id: token.id,
           userId: token.userId,
-        };
+        } as any;
       }
       return session;
     },

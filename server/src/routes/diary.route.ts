@@ -23,53 +23,6 @@ function toDiaryDate(input: any): Date | null {
 }
 
 /**
- * POST /api/diary
- * body: { date, content, emoji, friendUserId }
- *
- * - Next의 upsert 로직 그대로: (userId, date) 기준으로 있으면 update, 없으면 create
- */
-router.post("/", requireAuth, async (req, res) => {
-  console.log("✅ HIT DIARY POST (Express)", req.body);
-
-  const loginUserId = Number((req as any).user.id);
-  const { date, content, emoji, friendUserId } = req.body ?? {};
-
-  const diaryDate = toDiaryDate(date);
-  if (!diaryDate) {
-    return res.status(400).json({ error: "date is required" });
-  }
-
-  try {
-    // friendUserId는 숫자/문자열 들어올 수 있으니 정리 (없으면 null)
-    const friendIdNumber =
-      friendUserId === undefined || friendUserId === null || friendUserId === ""
-        ? null
-        : Number(friendUserId);
-
-    await prisma.diary.upsert({
-      where: { userId_date: { userId: loginUserId, date: diaryDate } },
-      update: {
-        content,
-        emoji, // ✅ schema에 emoji 필드가 있어야 함
-        friendUserId: friendIdNumber, // ✅ schema에 friendUserId 필드가 있어야 함(없으면 이 줄 삭제)
-      },
-      create: {
-        userId: loginUserId,
-        date: diaryDate,
-        content,
-        emoji,
-        friendUserId: friendIdNumber,
-      },
-    });
-
-    return res.json({ success: true });
-  } catch (e) {
-    console.error("POST /diary error:", e);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
-
-/**
  * GET /api/diary?date=YYYY-MM-DD&friendUserId=<number?>
  *
  * - Next 코드와 동일하게 해당 날짜(UTC) 범위에서 diary 1개 조회
