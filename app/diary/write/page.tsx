@@ -125,12 +125,22 @@ export default function DiaryWrite() {
     }
 
     try {
+      // ✅ 저장 전에 같은 날짜에 이미 일기가 있는지 확인
+      const dateStr = selected.format("YYYY-MM-DD");
+      const checkRes = await fetch(`/api/diary?date=${dateStr}`);
+      const checkData = await checkRes.json();
+
+      if (checkData?.diary) {
+        alert("해당 날짜에 이미 작성한 일기가 있습니다.");
+        return;
+      }
+
       const res = await fetch("/api/diaryWrite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           content,
-          date: selected.format("YYYY-MM-DD"),
+          date: dateStr,
           emoji: selectedEmoji,
           userId: session?.user?.id || 0,
         }),
