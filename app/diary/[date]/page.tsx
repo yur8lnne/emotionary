@@ -116,9 +116,9 @@ export default function DiaryDetailPage() {
           <div>
             <h2 className="text-xl font-semibold mb-3">일기 내용</h2>
 
-            <div className="border border-gray-300 rounded-lg p-4 whitespace-pre-wrap bg-white leading-relaxed">
-              {diary.content}
-            </div>
+            <div className="border border-gray-300 rounded-lg p-4 bg-white leading-relaxed prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: diary.content }}
+            />
           </div>
 
           {/* ---------------------------------------------------------------- */}

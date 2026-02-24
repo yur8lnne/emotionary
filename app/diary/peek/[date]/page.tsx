@@ -117,17 +117,15 @@ export default function DiaryDetailPage() {
             </div>
           )}
 
-          <p
+          <div
             style={{
-              whiteSpace: "pre-wrap",
               padding: "15px",
               border: "1px solid #ddd",
               borderRadius: "8px",
               marginTop: "10px",
             }}
-          >
-            {diary.content}
-          </p><br></br><br></br>
+            dangerouslySetInnerHTML={{ __html: diary.content }}
+          /><br></br><br></br>
 
           {/* ---------------------------------------------------------------- */}
           {/* ✅ 좋아요 */}
