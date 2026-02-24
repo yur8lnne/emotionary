@@ -1,0 +1,6 @@
+{
+  "name": "emotionary-server",
+  "private": true,
+  "type": "commonjs",
+  "dev:api": "ts-node-dev --clear --respawn --transpile-only --project server/tsconfig.json server/src/index.ts"
+}
