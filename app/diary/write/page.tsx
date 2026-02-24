@@ -125,7 +125,7 @@ export default function DiaryWrite() {
     }
 
     try {
-      const res = await fetch("/api/diary/write", {
+      const res = await fetch("/api/diaryWrite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

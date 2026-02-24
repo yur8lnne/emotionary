@@ -10,7 +10,7 @@ import loginRouter from "./login.route";
 const router = Router();
 
 router.use("/diary", diaryRouter);
-router.use("/diary/write", diaryWriteRouter); 
+router.use("/diaryWrite", diaryWriteRouter); 
 router.use("/friends", friendsRouter);
 router.use("/auth", authRouter);
 router.use("/register", registerRouter);
