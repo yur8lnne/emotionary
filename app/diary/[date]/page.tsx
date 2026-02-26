@@ -36,7 +36,7 @@ export default function DiaryDetailPage() {
 
   const handleLikeClick = async () => {
     try {
-      const res = await fetch(`/api/diary/like`, {
+      const res = await fetch(`/api/diaryLike`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

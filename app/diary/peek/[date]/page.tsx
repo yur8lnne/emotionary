@@ -46,7 +46,7 @@ export default function DiaryDetailPage() {
     if (!session?.user?.id) return;
     
     try {
-      const res = await fetch(`/api/diary/like`, {
+      const res = await fetch(`/api/diaryLike`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
