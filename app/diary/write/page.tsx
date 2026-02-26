@@ -25,6 +25,14 @@ export default function DiaryWrite() {
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
 
+  const isEditorEmpty = () => {
+    if (!editorRef.current) return true;
+    const text = editorRef.current.innerText.replace(/\u200B/g, "").trim();
+    const html = editorRef.current.innerHTML.replace(/<br\s*\/?>(\s*)/gi, "").trim();
+    const hasMedia = !!editorRef.current.querySelector("img");
+    return text === "" && html === "" && !hasMedia;
+  };
+
   const daysInMonth = current.daysInMonth();
   const startDay = current.startOf("month").day();
 
@@ -66,25 +74,26 @@ export default function DiaryWrite() {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onload = (event) => {
+        if (!editorRef.current) return;
+
+        // placeholder 텍스트 확인 및 제거
+        const text = editorRef.current.innerText.trim();
+        if (text === "오늘은 어떤 하루였나요?" || text === "일기를 작성해보세요..." || text === "") {
+          editorRef.current.innerHTML = "";
+          setEditorEmpty(false);
+        }
+
         const img = document.createElement("img");
         img.src = event.target?.result as string;
         img.style.maxWidth = "100%";
         img.style.display = "block";
         img.style.margin = "8px 0";
 
-        restoreSelection();
-        const sel = window.getSelection();
-        if (sel && sel.rangeCount > 0) {
-          const range = sel.getRangeAt(0);
-          range.deleteContents();
-          range.insertNode(img);
-          range.setStartAfter(img);
-          range.setEndAfter(img);
-          sel.removeAllRanges();
-          sel.addRange(range);
-        } else if (editorRef.current) {
-          editorRef.current.appendChild(img);
-        }
+        // 이미지 삽입
+        editorRef.current.appendChild(img);
+        
+        // 이미지 삽입 후 포커스
+        editorRef.current.focus();
       };
       reader.readAsDataURL(file);
     }
@@ -118,8 +127,9 @@ export default function DiaryWrite() {
       return;
     }
 
-    const content = editorRef.current?.innerHTML.trim();
-    if (!content || content === "" || content === "일기를 작성해보세요...") {
+    const content = editorRef.current?.innerHTML.trim() || "";
+    const placeholderText = editorRef.current?.innerText.trim();
+    if (isEditorEmpty() || placeholderText === "일기를 작성해보세요..." || placeholderText === "오늘은 어떤 하루였나요?") {
       alert("내용을 입력해주세요!");
       return;
     }
@@ -266,7 +276,7 @@ export default function DiaryWrite() {
           }
         }}
         onBlur={() => {
-          if (editorRef.current && editorRef.current.innerText.trim() === "") {
+          if (editorRef.current && isEditorEmpty()) {
             editorRef.current.innerText = "일기를 작성해보세요...";
             setEditorEmpty(true);
           } else {
@@ -274,7 +284,7 @@ export default function DiaryWrite() {
           }
         }}
         onInput={() => {
-          setEditorEmpty(editorRef.current!.innerText.trim() === "");
+          setEditorEmpty(isEditorEmpty());
         }}
         style={{
           minHeight: 240,
