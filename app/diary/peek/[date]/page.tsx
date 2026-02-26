@@ -133,7 +133,14 @@ export default function DiaryDetailPage() {
           <div>
             <h2 className="text-xl font-semibold mb-3">좋아요</h2>
 
-            <span><a href="#" onClick={() => handleLikeClick()}>❤️</a> {diary.likes.length}명이 좋아합니다.</span>
+            <span>
+              <a href="#" onClick={(e) => { e.preventDefault(); handleLikeClick(); }}>
+                {session?.user?.id && diary?.likes?.some((like: any) => 
+                  Number(like.userId) === Number(session.user.id) && Number(like.diaryId) === Number(diary.id)
+                ) ? '❤️' : '♡'}
+              </a>
+              {' '}{diary.likes.length}명이 좋아합니다.
+            </span>
           </div>
 
           <button

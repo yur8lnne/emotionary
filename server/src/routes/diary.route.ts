@@ -93,7 +93,13 @@ router.get("/", requireAuth, async (req, res) => {
       },
       include: {
         emotions: true,
-        likes: true,
+        likes: {
+          select: {
+            id: true,
+            userId: true,
+            diaryId: true,
+          },
+        },
       },
     });
 
