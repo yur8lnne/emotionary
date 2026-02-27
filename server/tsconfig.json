@@ -6,7 +6,9 @@
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "strict": true
+    "strict": true,
+    "outDir": "../server-dist",
+    "rootDir": "./src"
   },
   "include": ["src/**/*.ts"]
 }
