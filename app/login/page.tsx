@@ -44,7 +44,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        alert("로그인 실패: " + result.error);
+        alert("로그인 실패!");
       } else {
         alert("로그인 성공!");
         router.push("/diary"); // 로그인 후 달력 페이지로 이동
